@@ -1,6 +1,14 @@
 # YaGoStatus
 Yet Another i3status replacement written in Go.
 
+## Features
+- Instant and independent updating of widgets.
+- Handling click events.
+- Shell scripting widgets and events handlers.
+- Wrapping other status programs (i3status, py3status, conky, etc.).
+- Templates for widgets outputs.
+- Update widget via http/websocket requests.
+
 ## Installation
 
     go get github.com/burik666/yagostatus
