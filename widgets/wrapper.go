@@ -52,9 +52,21 @@ func (w *WrapperWidget) Run(c chan []ygs.I3BarBlock) error {
 	reader := bufio.NewReader(stdout)
 	decoder := json.NewDecoder(reader)
 
+	var firstMessage interface{}
+	if err := decoder.Decode(&firstMessage); err != nil {
+		return err
+	}
+	firstMessageData, _ := json.Marshal(firstMessage)
+
 	var header ygs.I3BarHeader
-	if err := decoder.Decode(&header); err == nil {
+	if err := json.Unmarshal(firstMessageData, &header); err == nil {
 		decoder.Token()
+	} else {
+		var blocks []ygs.I3BarBlock
+		if err := json.Unmarshal(firstMessageData, &blocks); err != nil {
+			return err
+		}
+		c <- blocks
 	}
 
 	for {
