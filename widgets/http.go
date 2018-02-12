@@ -12,7 +12,8 @@ import (
 	"net/http"
 )
 
-type HttpWidget struct {
+// HTTPWidget implements the http server widget.
+type HTTPWidget struct {
 	c      chan []ygs.I3BarBlock
 	conn   *websocket.Conn
 	listen string
@@ -21,16 +22,17 @@ type HttpWidget struct {
 
 var serveMuxes map[string]*http.ServeMux
 
-func (w *HttpWidget) Configure(cfg map[string]interface{}) error {
+// Configure configures the widget.
+func (w *HTTPWidget) Configure(cfg map[string]interface{}) error {
 	v, ok := cfg["listen"]
 	if !ok {
-		return errors.New("Missing 'listen' setting")
+		return errors.New("missing 'listen' setting")
 	}
 	w.listen = v.(string)
 
 	v, ok = cfg["path"]
 	if !ok {
-		return errors.New("Missing 'path' setting")
+		return errors.New("missing 'path' setting")
 	}
 	w.path = v.(string)
 
@@ -41,35 +43,35 @@ func (w *HttpWidget) Configure(cfg map[string]interface{}) error {
 	return nil
 }
 
-func (w *HttpWidget) Run(c chan []ygs.I3BarBlock) error {
+// Run starts the main loop.
+func (w *HTTPWidget) Run(c chan []ygs.I3BarBlock) error {
 	w.c = c
 
 	mux, ok := serveMuxes[w.listen]
 	if ok {
 		mux.HandleFunc(w.path, w.httpHandler)
 		return nil
-	} else {
-
-		mux = http.NewServeMux()
-		mux.HandleFunc(w.path, w.httpHandler)
-
-		httpServer := &http.Server{
-			Addr:    w.listen,
-			Handler: mux,
-		}
-		serveMuxes[w.listen] = mux
-		return httpServer.ListenAndServe()
 	}
+	mux = http.NewServeMux()
+	mux.HandleFunc(w.path, w.httpHandler)
+
+	httpServer := &http.Server{
+		Addr:    w.listen,
+		Handler: mux,
+	}
+	serveMuxes[w.listen] = mux
+	return httpServer.ListenAndServe()
 }
 
-func (w *HttpWidget) Event(event ygs.I3BarClickEvent) {
+// Event processes the widget events.
+func (w *HTTPWidget) Event(event ygs.I3BarClickEvent) {
 	if w.conn != nil {
 		websocket.JSON.Send(w.conn, event)
 	}
 
 }
 
-func (w *HttpWidget) httpHandler(response http.ResponseWriter, request *http.Request) {
+func (w *HTTPWidget) httpHandler(response http.ResponseWriter, request *http.Request) {
 	if request.Method == "GET" {
 		ws := websocket.Handler(w.wsHandler)
 		ws.ServeHTTP(response, request)
@@ -94,7 +96,7 @@ func (w *HttpWidget) httpHandler(response http.ResponseWriter, request *http.Req
 	response.Write([]byte("Bad request method, allow GET for websocket and POST for HTTP update"))
 }
 
-func (w *HttpWidget) wsHandler(ws *websocket.Conn) {
+func (w *HTTPWidget) wsHandler(ws *websocket.Conn) {
 	var messages []ygs.I3BarBlock
 	w.conn = ws
 	for {
@@ -117,8 +119,9 @@ func (w *HttpWidget) wsHandler(ws *websocket.Conn) {
 	ws.Close()
 }
 
-func (w *HttpWidget) Stop() {}
+// Stop shutdowns the widget.
+func (w *HTTPWidget) Stop() {}
 
 func init() {
-	ygs.RegisterWidget(HttpWidget{})
+	ygs.RegisterWidget(HTTPWidget{})
 }

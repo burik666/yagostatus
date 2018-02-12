@@ -1,5 +1,14 @@
 package ygs
 
+// I3BarHeader represents the header of an i3bar message.
+type I3BarHeader struct {
+	Version     uint8 `json:"version"`
+	StopSignal  int   `json:"stop_signal,omitempty"`
+	ContSignal  int   `json:"cont_signal,omitempty"`
+	ClickEvents bool  `json:"click_events,omitempty"`
+}
+
+// I3BarBlock represents a block of i3bar message.
 type I3BarBlock struct {
 	FullText            string                 `json:"full_text"`
 	ShortText           string                 `json:"short_text,omitempty"`
@@ -17,17 +26,11 @@ type I3BarBlock struct {
 	Custom              map[string]interface{} `json:"-"`
 }
 
+// I3BarClickEvent represents a user click event message.
 type I3BarClickEvent struct {
 	Name     string `json:"name,omitmpty"`
 	Instance string `json:"instance,omitempty"`
 	X        uint16 `json:"x"`
 	Y        uint16 `json:"y"`
 	Button   uint8  `json:"button"`
-}
-
-type I3BarHeader struct {
-	Version     uint8 `json:"version"`
-	StopSignal  int   `json:"stop_signal,omitempty"`
-	ContSignal  int   `json:"cont_signal,omitempty"`
-	ClickEvents bool  `json:"click_events,omitempty"`
 }

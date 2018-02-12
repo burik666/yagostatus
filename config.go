@@ -8,14 +8,20 @@ import (
 	"io/ioutil"
 )
 
-type tmpConfig struct {
-	Widgets []map[string]interface{} `yaml:"widgets"`
-}
-
+// Config represents the main configuration.
 type Config struct {
 	Widgets []ConfigWidget
 }
 
+// ConfigWidget represents a widget configuration.
+type ConfigWidget struct {
+	Name     string
+	Params   map[string]interface{}
+	Template ygs.I3BarBlock
+	Events   []ConfigWidgetEvent
+}
+
+// ConfigWidgetEvent represents a widget events.
 type ConfigWidgetEvent struct {
 	Command  string `yaml:"command"`
 	Button   uint8  `yaml:"button"`
@@ -24,33 +30,28 @@ type ConfigWidgetEvent struct {
 	Output   bool   `yaml:"output,omitempty"`
 }
 
-type ConfigWidget struct {
-	Name     string
-	Params   map[string]interface{}
-	Template ygs.I3BarBlock
-	Events   []ConfigWidgetEvent
-}
-
 func loadConfig(filename string) (*Config, error) {
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
 
-	var t tmpConfig
-	if err := yaml.Unmarshal(data, &t); err != nil {
+	var tmp struct {
+		Widgets []map[string]interface{} `yaml:"widgets"`
+	}
+	if err := yaml.Unmarshal(data, &tmp); err != nil {
 		return nil, err
 	}
 
 	config := Config{}
 
-	for _, v := range t.Widgets {
+	for _, v := range tmp.Widgets {
 		widget := ConfigWidget{}
 
 		var ok bool
 		widget.Name, ok = v["widget"].(string)
 		if !ok {
-			return nil, errors.New("Missing widget name.")
+			return nil, errors.New("missing widget name")
 		}
 		delete(v, "widget")
 

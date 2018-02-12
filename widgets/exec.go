@@ -10,31 +10,33 @@ import (
 	"time"
 )
 
+// ExecWidget implements the exec widget.
 type ExecWidget struct {
-	command       string
-	interval      time.Duration
-	events_update bool
-	c             chan []ygs.I3BarBlock
+	command      string
+	interval     time.Duration
+	eventsUpdate bool
+	c            chan []ygs.I3BarBlock
 }
 
+// Configure configures the widget.
 func (w *ExecWidget) Configure(cfg map[string]interface{}) error {
 	v, ok := cfg["command"]
 	if !ok {
-		return errors.New("Missing 'command' setting")
+		return errors.New("missing 'command' setting")
 	}
 	w.command = v.(string)
 
 	v, ok = cfg["interval"]
 	if !ok {
-		return errors.New("Missing 'interval' setting")
+		return errors.New("missing 'interval' setting")
 	}
 	w.interval = time.Second * time.Duration(v.(int))
 
 	v, ok = cfg["events_update"]
 	if ok {
-		w.events_update = v.(bool)
+		w.eventsUpdate = v.(bool)
 	} else {
-		w.events_update = false
+		w.eventsUpdate = false
 	}
 
 	return nil
@@ -58,6 +60,7 @@ func (w *ExecWidget) exec() error {
 
 }
 
+// Run starts the main loop.
 func (w *ExecWidget) Run(c chan []ygs.I3BarBlock) error {
 	w.c = c
 	if w.interval == 0 {
@@ -75,12 +78,14 @@ func (w *ExecWidget) Run(c chan []ygs.I3BarBlock) error {
 	return nil
 }
 
+// Event processes the widget events.
 func (w *ExecWidget) Event(event ygs.I3BarClickEvent) {
-	if w.events_update {
+	if w.eventsUpdate {
 		w.exec()
 	}
 }
 
+// Stop shutdowns the widget.
 func (w *ExecWidget) Stop() {}
 
 func init() {

@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// UnmarshalJSON unmarshals json with custom keys (with _ prefix).
 func (b *I3BarBlock) UnmarshalJSON(data []byte) error {
 	type dataWrapped I3BarBlock
 
@@ -20,7 +21,7 @@ func (b *I3BarBlock) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &wr.Custom); err != nil {
 		return err
 	}
-	for k, _ := range wr.Custom {
+	for k := range wr.Custom {
 		if k[0] != '_' {
 			delete(wr.Custom, k)
 		}
@@ -31,10 +32,11 @@ func (b *I3BarBlock) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (d I3BarBlock) MarshalJSON() ([]byte, error) {
+// MarshalJSON marshals json with custom keys (with _ prefix).
+func (b I3BarBlock) MarshalJSON() ([]byte, error) {
 	type dataWrapped I3BarBlock
 	var wd dataWrapped
-	wd = dataWrapped(d)
+	wd = dataWrapped(b)
 
 	if len(wd.Custom) == 0 {
 		buf := &bytes.Buffer{}
@@ -59,12 +61,11 @@ func (d I3BarBlock) MarshalJSON() ([]byte, error) {
 	encoder.SetEscapeHTML(false)
 	err := encoder.Encode(resmap)
 	return buf.Bytes(), err
-
-	//	return json.Marshal(resmap)
 }
 
 var registeredWidgets = make(map[string]reflect.Type)
 
+// RegisterWidget registers widget.
 func RegisterWidget(widget interface{}) error {
 	t := reflect.TypeOf(widget)
 	name := strings.ToLower(t.Name())
@@ -75,6 +76,7 @@ func RegisterWidget(widget interface{}) error {
 	return nil
 }
 
+// NewWidget creates new widget by name.
 func NewWidget(name string) (Widget, bool) {
 	t, ok := registeredWidgets[name]
 	if !ok {

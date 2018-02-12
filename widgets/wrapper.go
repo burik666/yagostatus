@@ -11,6 +11,7 @@ import (
 	"regexp"
 )
 
+// WrapperWidget implements the wrapper of other status commands.
 type WrapperWidget struct {
 	stdin   io.WriteCloser
 	cmd     *exec.Cmd
@@ -18,10 +19,11 @@ type WrapperWidget struct {
 	args    []string
 }
 
+// Configure configures the widget.
 func (w *WrapperWidget) Configure(cfg map[string]interface{}) error {
 	v, ok := cfg["command"]
 	if !ok {
-		return errors.New("Missing 'command' setting")
+		return errors.New("missing 'command' setting")
 	}
 	r := regexp.MustCompile("'.+'|\".+\"|\\S+")
 	m := r.FindAllString(v.(string), -1)
@@ -31,6 +33,7 @@ func (w *WrapperWidget) Configure(cfg map[string]interface{}) error {
 	return nil
 }
 
+// Run starts the main loop.
 func (w *WrapperWidget) Run(c chan []ygs.I3BarBlock) error {
 	w.cmd = exec.Command(w.command, w.args...)
 	w.cmd.Stderr = os.Stderr
@@ -83,14 +86,15 @@ func (w *WrapperWidget) Run(c chan []ygs.I3BarBlock) error {
 	return w.cmd.Wait()
 }
 
+// Event processes the widget events.
 func (w *WrapperWidget) Event(event ygs.I3BarClickEvent) {
 	msg, _ := json.Marshal(event)
 	w.stdin.Write(msg)
 	w.stdin.Write([]byte(",\n"))
 }
 
-func (w *WrapperWidget) Stop() {
-}
+// Stop shutdowns the widget.
+func (w *WrapperWidget) Stop() {}
 
 func init() {
 	ygs.RegisterWidget(WrapperWidget{})

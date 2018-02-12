@@ -1,3 +1,4 @@
+// Yet Another i3status replacement written in Go.
 package main
 
 import (

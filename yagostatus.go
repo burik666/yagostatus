@@ -14,6 +14,7 @@ import (
 	"sync"
 )
 
+// A YaGoStatus is the main struct.
 type YaGoStatus struct {
 	widgets       []ygs.Widget
 	widgetsOutput [][]ygs.I3BarBlock
@@ -21,6 +22,7 @@ type YaGoStatus struct {
 	upd           chan int
 }
 
+// AddWidget adds widget to statusbar.
 func (status *YaGoStatus) AddWidget(widget ygs.Widget, config ConfigWidget) error {
 	if err := widget.Configure(config.Params); err != nil {
 		return err
@@ -51,8 +53,8 @@ func (status *YaGoStatus) processWidgetEvents(i int, j int, event ygs.I3BarClick
 			if err != nil {
 				return err
 			}
-			eventJson, _ := json.Marshal(event)
-			cmdStdin.Write(eventJson)
+			eventJSON, _ := json.Marshal(event)
+			cmdStdin.Write(eventJSON)
 			cmdStdin.Write([]byte("\n"))
 			cmdStdin.Close()
 
@@ -63,9 +65,9 @@ func (status *YaGoStatus) processWidgetEvents(i int, j int, event ygs.I3BarClick
 			if e.Output {
 				var blocks []ygs.I3BarBlock
 				if err := json.Unmarshal(cmdOutput, &blocks); err == nil {
-					for bi, _ := range blocks {
+					for bi := range blocks {
 						block := &blocks[bi]
-						MergeBlocks(block, status.widgetsConfig[i].Template)
+						mergeBlocks(block, status.widgetsConfig[i].Template)
 						block.Name = fmt.Sprintf("ygs-%d-%s", i, block.Name)
 						block.Instance = fmt.Sprintf("ygs-%d-%d-%s", i, j, block.Instance)
 					}
@@ -113,6 +115,7 @@ func (status *YaGoStatus) eventReader() {
 	}
 }
 
+// Run starts the main loop.
 func (status *YaGoStatus) Run() {
 	status.upd = make(chan int)
 	for i, widget := range status.widgets {
@@ -123,8 +126,8 @@ func (status *YaGoStatus) Run() {
 				case out := <-c:
 					output := make([]ygs.I3BarBlock, len(out))
 					copy(output, out)
-					for j, _ := range output {
-						MergeBlocks(&output[j], status.widgetsConfig[i].Template)
+					for j := range output {
+						mergeBlocks(&output[j], status.widgetsConfig[i].Template)
 						output[j].Name = fmt.Sprintf("ygs-%d-%s", i, output[j].Name)
 						output[j].Instance = fmt.Sprintf("ygs-%d-%d-%s", i, j, output[j].Instance)
 					}
@@ -168,6 +171,7 @@ func (status *YaGoStatus) Run() {
 	status.eventReader()
 }
 
+// Stop shutdowns widgets and main loop.
 func (status *YaGoStatus) Stop() {
 	var wg sync.WaitGroup
 	for _, widget := range status.widgets {
@@ -180,7 +184,7 @@ func (status *YaGoStatus) Stop() {
 	wg.Wait()
 }
 
-func MergeBlocks(b *ygs.I3BarBlock, tpl ygs.I3BarBlock) {
+func mergeBlocks(b *ygs.I3BarBlock, tpl ygs.I3BarBlock) {
 	var resmap map[string]interface{}
 
 	jb, _ := json.Marshal(*b)
