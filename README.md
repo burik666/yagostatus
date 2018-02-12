@@ -1,6 +1,7 @@
 # YaGoStatus
 Yet Another i3status replacement written in Go.
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/fb1e1cbd0987425783c6ae30d5c5a833)](https://app.codacy.com/app/burik666/yagostatus?utm_source=github.com&utm_medium=referral&utm_content=burik666/yagostatus&utm_campaign=badger)
 [![yagostatus](https://gist.githubusercontent.com/burik666/da88db63b9a85863ad585646c03488b8/raw/yagostatus_example.gif)](https://gist.github.com/burik666/da88db63b9a85863ad585646c03488b8)
 
 ## Features
