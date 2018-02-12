@@ -45,7 +45,6 @@ func (w *ClockWidget) Run(c chan []ygs.I3BarBlock) error {
 			c <- res
 		}
 	}
-	return nil
 }
 
 // Event processes the widget events.
