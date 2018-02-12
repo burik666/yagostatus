@@ -1,6 +1,8 @@
 # YaGoStatus
 Yet Another i3status replacement written in Go.
 
+[![yagostatus](https://gist.githubusercontent.com/burik666/da88db63b9a85863ad585646c03488b8/raw/yagostatus_example.gif)](https://gist.github.com/burik666/da88db63b9a85863ad585646c03488b8)
+
 ## Features
 - Instant and independent updating of widgets.
 - Handling click events.
