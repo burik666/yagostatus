@@ -28,7 +28,7 @@ type I3BarBlock struct {
 
 // I3BarClickEvent represents a user click event message.
 type I3BarClickEvent struct {
-	Name     string `json:"name,omitmpty"`
+	Name     string `json:"name,omitempty"`
 	Instance string `json:"instance,omitempty"`
 	X        uint16 `json:"x"`
 	Y        uint16 `json:"y"`
