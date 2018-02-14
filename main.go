@@ -3,6 +3,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	_ "github.com/burik666/yagostatus/widgets"
 	"github.com/burik666/yagostatus/ygs"
 	"log"
@@ -14,8 +15,15 @@ import (
 func main() {
 	log.SetFlags(log.Ldate + log.Ltime + log.Lshortfile)
 
-	configFile := flag.String("config", "yagostatus.yml", "Config file")
+	configFile := flag.String("config", "yagostatus.yml", "config file")
+	versionFlag := flag.Bool("version", false, "print version information and exit")
+
 	flag.Parse()
+
+	if *versionFlag {
+		fmt.Printf("YaGoStatus %s\n", Version)
+		return
+	}
 
 	config, err := loadConfig(*configFile)
 	if err != nil {
