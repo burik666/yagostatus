@@ -22,7 +22,7 @@ type I3BarBlock struct {
 	Instance            string                 `json:"instance,omitempty"`
 	Urgent              bool                   `json:"urgent,omitempty"`
 	Separator           *bool                  `json:"separator,omitempty"`
-	SeparatorBlockWidth uint32                 `json:"separator_block_width,omitempty"`
+	SeparatorBlockWidth uint16                 `json:"separator_block_width,omitempty"`
 	Custom              map[string]interface{} `json:"-"`
 }
 
