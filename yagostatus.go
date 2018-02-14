@@ -48,6 +48,10 @@ func (status *YaGoStatus) processWidgetEvents(i int, j int, event ygs.I3BarClick
 				fmt.Sprintf("I3_%s=%d", "BUTTON", event.Button),
 				fmt.Sprintf("I3_%s=%d", "X", event.X),
 				fmt.Sprintf("I3_%s=%d", "Y", event.Y),
+				fmt.Sprintf("I3_%s=%d", "RELATIVE_X", event.RelativeX),
+				fmt.Sprintf("I3_%s=%d", "RELATIVE_Y", event.RelativeY),
+				fmt.Sprintf("I3_%s=%d", "WIDTH", event.Width),
+				fmt.Sprintf("I3_%s=%d", "HEIGHT", event.Height),
 			)
 			cmdStdin, err := cmd.StdinPipe()
 			if err != nil {
