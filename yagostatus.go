@@ -22,6 +22,44 @@ type YaGoStatus struct {
 	upd           chan int
 }
 
+// Configure loads config from a file.
+func (status *YaGoStatus) Configure(configFile string) {
+	config, err := loadConfig(configFile)
+	if err != nil {
+		status.errorWidget(err.Error())
+		return
+	}
+	for _, w := range config.Widgets {
+		widget, ok := ygs.NewWidget(w.Name + "widget")
+		if !ok {
+			status.errorWidget(fmt.Sprintf("Widget '%s' not found", w.Name))
+			continue
+		}
+
+		err := status.AddWidget(widget, w)
+		if err != nil {
+			status.errorWidget(fmt.Sprintf("Widget '%s' configuration error: %s", w.Name, err))
+			continue
+		}
+	}
+}
+
+func (status *YaGoStatus) errorWidget(text string) {
+	log.Print(text)
+	widget, ok := ygs.NewWidget("staticwidget")
+	if !ok {
+		log.Fatal("Failed to create error widget: 'staticwidget' not found")
+	}
+	err := status.AddWidget(widget, ConfigWidget{
+		Params: map[string]interface{}{
+			"blocks": fmt.Sprintf(`[{"full_text": "%s","color": "#ff0000"}]`, text),
+		},
+	})
+	if err != nil {
+		log.Fatalf("Failed to configure error widget: %s", err)
+	}
+}
+
 // AddWidget adds widget to statusbar.
 func (status *YaGoStatus) AddWidget(widget ygs.Widget, config ConfigWidget) error {
 	if err := widget.Configure(config.Params); err != nil {
@@ -104,12 +142,20 @@ func (status *YaGoStatus) eventReader() {
 			} else {
 				for i, widgetOutput := range status.widgetsOutput {
 					for j, output := range widgetOutput {
-						if (event.Name == output.Name) && (event.Instance == output.Instance) {
+						if (event.Name != "" && event.Name == output.Name) && (event.Instance != "" && event.Instance == output.Instance) {
 							e := event
 							e.Name = strings.Join(strings.Split(e.Name, "-")[2:], "-")
 							e.Instance = strings.Join(strings.Split(e.Instance, "-")[3:], "-")
 							if err := status.processWidgetEvents(i, j, e); err != nil {
-								log.Printf("%s", err)
+								log.Print(err)
+								status.widgetsOutput[i][j] = ygs.I3BarBlock{
+									FullText: fmt.Sprintf("Event error: %s", err.Error()),
+									Color:    "#ff0000",
+									Name:     event.Name,
+									Instance: event.Instance,
+								}
+								break
+
 							}
 						}
 					}
@@ -146,7 +192,7 @@ func (status *YaGoStatus) Run() {
 				log.Print(err)
 				c <- []ygs.I3BarBlock{ygs.I3BarBlock{
 					FullText: err.Error(),
-					Urgent:   true,
+					Color:    "#ff0000",
 				}}
 			}
 		}(widget, c)

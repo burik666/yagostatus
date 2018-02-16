@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	_ "github.com/burik666/yagostatus/widgets"
-	"github.com/burik666/yagostatus/ygs"
 	"log"
 	"os"
 	"os/signal"
@@ -25,23 +24,8 @@ func main() {
 		return
 	}
 
-	config, err := loadConfig(*configFile)
-	if err != nil {
-		log.Fatal(err)
-	}
 	yaGoStatus := YaGoStatus{}
-
-	for _, w := range config.Widgets {
-		widget, ok := ygs.NewWidget(w.Name + "widget")
-		if !ok {
-			log.Fatalf("Widget '%s' not found", w.Name)
-		}
-
-		err := yaGoStatus.AddWidget(widget, w)
-		if err != nil {
-			log.Fatalf("Widget '%s' configuration error: %s", w.Name, err)
-		}
-	}
+	yaGoStatus.Configure(*configFile)
 
 	stopsignals := make(chan os.Signal, 1)
 	signal.Notify(stopsignals, syscall.SIGINT, syscall.SIGTERM)
