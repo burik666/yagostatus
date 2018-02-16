@@ -1,4 +1,4 @@
 package main
 
-// Version contains YaGo~status version.
-var Version = "0.1.0"
+// Version contains YaGoStatus version.
+var Version = "0.2.0"
