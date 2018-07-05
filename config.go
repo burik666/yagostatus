@@ -35,6 +35,10 @@ func loadConfig(filename string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	return parseConfig(data)
+}
+
+func parseConfig(data []byte) (*Config, error) {
 
 	var tmp struct {
 		Widgets []map[string]interface{} `yaml:"widgets"`

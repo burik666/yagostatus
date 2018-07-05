@@ -23,11 +23,38 @@ type YaGoStatus struct {
 }
 
 // Configure loads config from a file.
-func (status *YaGoStatus) Configure(configFile string) {
+func (status *YaGoStatus) Configure(configFile string) error {
 	config, err := loadConfig(configFile)
 	if err != nil {
 		status.errorWidget(err.Error())
-		return
+		config, err = parseConfig([]byte(`
+widgets:
+  - widget: static
+    blocks: >
+      [
+        {
+          "full_text": "YaGoStatus",
+          "color": "#2e9ef4"
+        }
+      ]
+    events:
+      - button: 1
+        command: xdg-open https://github.com/burik666/yagostatus/
+
+  - widget: wrapper
+    command: /usr/bin/i3status
+
+  - widget: clock
+    format: Jan _2 Mon 15:04:05 # https://golang.org/pkg/time/#Time.Format
+    template: >
+        {
+            "color": "#ffffff",
+            "separator": true,
+            "separator_block_width": 20
+        }`))
+		if err != nil {
+			return err
+		}
 	}
 	for _, w := range config.Widgets {
 		widget, ok := ygs.NewWidget(w.Name + "widget")
@@ -42,6 +69,7 @@ func (status *YaGoStatus) Configure(configFile string) {
 			continue
 		}
 	}
+	return nil
 }
 
 func (status *YaGoStatus) errorWidget(text string) {

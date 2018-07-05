@@ -25,7 +25,10 @@ func main() {
 	}
 
 	yaGoStatus := YaGoStatus{}
-	yaGoStatus.Configure(*configFile)
+	err := yaGoStatus.Configure(*configFile)
+	if err != nil {
+		log.Fatalf("configure failed: %s", err)
+	}
 
 	stopsignals := make(chan os.Signal, 1)
 	signal.Notify(stopsignals, syscall.SIGINT, syscall.SIGTERM)
