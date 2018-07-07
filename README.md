@@ -33,7 +33,7 @@ Replace `status_command` to `/home/burik/go/bin/yagostatus` in your i3 config fi
 ### Troubleshooting
 Yagostatus outputs error messages in stderr, you can log them by redirecting stderr to a file.
 
-`status_command /home/burik//go/bin/yagostatus 2> /tmp/yagostatus.log`
+`status_command /home/burik/go/bin/yagostatus 2> /tmp/yagostatus.log`
 
 ## Configuration
 
