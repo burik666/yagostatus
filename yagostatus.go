@@ -78,9 +78,15 @@ func (status *YaGoStatus) errorWidget(text string) {
 	if !ok {
 		log.Fatal("Failed to create error widget: 'staticwidget' not found")
 	}
+	blocks, _ := json.Marshal([]ygs.I3BarBlock{
+		ygs.I3BarBlock{
+			FullText: text,
+			Color:    "#ff0000",
+		},
+	})
 	err := status.AddWidget(widget, ConfigWidget{
 		Params: map[string]interface{}{
-			"blocks": fmt.Sprintf(`[{"full_text": "%s","color": "#ff0000"}]`, text),
+			"blocks": string(blocks),
 		},
 	})
 	if err != nil {
