@@ -3,6 +3,7 @@ package widgets
 import (
 	"encoding/json"
 	"errors"
+
 	"github.com/burik666/yagostatus/ygs"
 )
 

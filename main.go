@@ -4,11 +4,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	_ "github.com/burik666/yagostatus/widgets"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+
+	_ "github.com/burik666/yagostatus/widgets"
 )
 
 func main() {

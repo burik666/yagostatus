@@ -2,8 +2,9 @@ package widgets
 
 import (
 	"errors"
-	"github.com/burik666/yagostatus/ygs"
 	"time"
+
+	"github.com/burik666/yagostatus/ygs"
 )
 
 // ClockWidget implements a clock.

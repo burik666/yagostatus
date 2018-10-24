@@ -3,11 +3,12 @@ package widgets
 import (
 	"encoding/json"
 	"errors"
-	"github.com/burik666/yagostatus/ygs"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/burik666/yagostatus/ygs"
 )
 
 // ExecWidget implements the exec widget.

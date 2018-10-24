@@ -3,9 +3,11 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"github.com/burik666/yagostatus/ygs"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
+
+	"github.com/burik666/yagostatus/ygs"
+
+	"gopkg.in/yaml.v2"
 )
 
 // Config represents the main configuration.

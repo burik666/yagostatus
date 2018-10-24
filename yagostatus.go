@@ -5,13 +5,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/burik666/yagostatus/ygs"
 	"io"
 	"log"
 	"os"
 	"os/exec"
 	"strings"
 	"sync"
+
+	"github.com/burik666/yagostatus/ygs"
 )
 
 // A YaGoStatus is the main struct.

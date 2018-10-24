@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"encoding/json"
 	"errors"
-	"github.com/burik666/yagostatus/ygs"
 	"io"
 	"os"
 	"os/exec"
 	"regexp"
+
+	"github.com/burik666/yagostatus/ygs"
 )
 
 // WrapperWidget implements the wrapper of other status commands.

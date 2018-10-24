@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/burik666/yagostatus/ygs"
-	"golang.org/x/net/websocket"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
+
+	"github.com/burik666/yagostatus/ygs"
+
+	"golang.org/x/net/websocket"
 )
 
 // HTTPWidget implements the http server widget.
