@@ -98,5 +98,5 @@ func (w *WrapperWidget) Event(event ygs.I3BarClickEvent) {
 func (w *WrapperWidget) Stop() {}
 
 func init() {
-	ygs.RegisterWidget(WrapperWidget{})
+	ygs.RegisterWidget(&WrapperWidget{})
 }

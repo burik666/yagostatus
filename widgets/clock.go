@@ -55,5 +55,5 @@ func (w *ClockWidget) Event(event ygs.I3BarClickEvent) {}
 func (w *ClockWidget) Stop() {}
 
 func init() {
-	ygs.RegisterWidget(ClockWidget{})
+	ygs.RegisterWidget(&ClockWidget{})
 }

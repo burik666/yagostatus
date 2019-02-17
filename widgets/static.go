@@ -35,5 +35,5 @@ func (w *StaticWidget) Event(event ygs.I3BarClickEvent) {}
 func (w *StaticWidget) Stop() {}
 
 func init() {
-	ygs.RegisterWidget(StaticWidget{})
+	ygs.RegisterWidget(&StaticWidget{})
 }

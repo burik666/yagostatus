@@ -90,5 +90,5 @@ func (w *ExecWidget) Event(event ygs.I3BarClickEvent) {
 func (w *ExecWidget) Stop() {}
 
 func init() {
-	ygs.RegisterWidget(ExecWidget{})
+	ygs.RegisterWidget(&ExecWidget{})
 }

@@ -25,5 +25,5 @@ func (w *BlankWidget) Event(event ygs.I3BarClickEvent) {}
 func (w *BlankWidget) Stop() {}
 
 func init() {
-	ygs.RegisterWidget(BlankWidget{})
+	ygs.RegisterWidget(&BlankWidget{})
 }

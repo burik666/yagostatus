@@ -125,5 +125,5 @@ func (w *HTTPWidget) wsHandler(ws *websocket.Conn) {
 func (w *HTTPWidget) Stop() {}
 
 func init() {
-	ygs.RegisterWidget(HTTPWidget{})
+	ygs.RegisterWidget(&HTTPWidget{})
 }
