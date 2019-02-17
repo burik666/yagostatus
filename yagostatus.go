@@ -107,13 +107,14 @@ func (status *YaGoStatus) AddWidget(widget ygs.Widget, config ConfigWidget) erro
 	return nil
 }
 
-func (status *YaGoStatus) processWidgetEvents(i int, j int, event ygs.I3BarClickEvent) error {
-	defer status.widgets[i].Event(event)
-	for _, e := range status.widgetsConfig[i].Events {
-		if (e.Button == 0 || event.Button == e.Button) &&
-			(e.Name == "" || e.Name == event.Name) &&
-			(e.Instance == "" || e.Instance == event.Instance) {
-			cmd := exec.Command("sh", "-c", e.Command)
+func (status *YaGoStatus) processWidgetEvents(widgetIndex int, outputIndex int, event ygs.I3BarClickEvent) error {
+	defer status.widgets[widgetIndex].Event(event)
+	for _, we := range status.widgetsConfig[widgetIndex].Events {
+		if (we.Button == 0 || we.Button == event.Button) &&
+			(we.Name == "" || we.Name == event.Name) &&
+			(we.Instance == "" || we.Instance == event.Instance) &&
+			checkModifiers(we.Modifiers, event.Modifiers) {
+			cmd := exec.Command("sh", "-c", we.Command)
 			cmd.Stderr = os.Stderr
 			cmd.Env = append(os.Environ(),
 				fmt.Sprintf("I3_%s=%s", "NAME", event.Name),
@@ -125,6 +126,7 @@ func (status *YaGoStatus) processWidgetEvents(i int, j int, event ygs.I3BarClick
 				fmt.Sprintf("I3_%s=%d", "RELATIVE_Y", event.RelativeY),
 				fmt.Sprintf("I3_%s=%d", "WIDTH", event.Width),
 				fmt.Sprintf("I3_%s=%d", "HEIGHT", event.Height),
+				fmt.Sprintf("I3_%s=%s", "MODIFIERS", strings.Join(event.Modifiers, ",")),
 			)
 			cmdStdin, err := cmd.StdinPipe()
 			if err != nil {
@@ -139,20 +141,20 @@ func (status *YaGoStatus) processWidgetEvents(i int, j int, event ygs.I3BarClick
 			if err != nil {
 				return err
 			}
-			if e.Output {
+			if we.Output {
 				var blocks []ygs.I3BarBlock
 				if err := json.Unmarshal(cmdOutput, &blocks); err == nil {
 					for bi := range blocks {
 						block := &blocks[bi]
-						mergeBlocks(block, status.widgetsConfig[i].Template)
-						block.Name = fmt.Sprintf("ygs-%d-%s", i, block.Name)
-						block.Instance = fmt.Sprintf("ygs-%d-%d-%s", i, j, block.Instance)
+						mergeBlocks(block, status.widgetsConfig[widgetIndex].Template)
+						block.Name = fmt.Sprintf("ygs-%d-%s", widgetIndex, block.Name)
+						block.Instance = fmt.Sprintf("ygs-%d-%d-%s", widgetIndex, outputIndex, block.Instance)
 					}
-					status.widgetsOutput[i] = blocks
+					status.widgetsOutput[widgetIndex] = blocks
 				} else {
-					status.widgetsOutput[i][j].FullText = strings.Trim(string(cmdOutput), "\n\r")
+					status.widgetsOutput[widgetIndex][outputIndex].FullText = strings.Trim(string(cmdOutput), "\n\r")
 				}
-				status.upd <- i
+				status.upd <- widgetIndex
 			}
 		}
 	}
@@ -175,8 +177,8 @@ func (status *YaGoStatus) eventReader() {
 			if err := json.Unmarshal([]byte(line), &event); err != nil {
 				log.Printf("%s (%s)", err, line)
 			} else {
-				for i, widgetOutput := range status.widgetsOutput {
-					for j, output := range widgetOutput {
+				for i, widgetOutputs := range status.widgetsOutput {
+					for j, output := range widgetOutputs {
 						if (event.Name != "" && event.Name == output.Name) && (event.Instance != "" && event.Instance == output.Instance) {
 							e := event
 							e.Name = strings.Join(strings.Split(e.Name, "-")[2:], "-")
@@ -279,4 +281,25 @@ func mergeBlocks(b *ygs.I3BarBlock, tpl ygs.I3BarBlock) {
 
 	jb, _ = json.Marshal(resmap)
 	json.Unmarshal(jb, b)
+}
+
+func checkModifiers(conditions []string, modifiers []string) bool {
+	for _, c := range conditions {
+		isNegative := c[0] == '!'
+		c = strings.TrimLeft(c, "!")
+		found := false
+		for _, v := range modifiers {
+			if c == v {
+				found = true
+				break
+			}
+		}
+		if found && isNegative {
+			return false
+		}
+		if (!found) && !isNegative {
+			return false
+		}
+	}
+	return true
 }

@@ -25,11 +25,12 @@ type ConfigWidget struct {
 
 // ConfigWidgetEvent represents a widget events.
 type ConfigWidgetEvent struct {
-	Command  string `yaml:"command"`
-	Button   uint8  `yaml:"button"`
-	Name     string `yaml:"name,omitempty"`
-	Instance string `yaml:"instance,omitempty"`
-	Output   bool   `yaml:"output,omitempty"`
+	Command   string   `yaml:"command"`
+	Button    uint8    `yaml:"button"`
+	Modifiers []string `yaml:"modifiers,omitempty"`
+	Name      string   `yaml:"name,omitempty"`
+	Instance  string   `yaml:"instance,omitempty"`
+	Output    bool     `yaml:"output,omitempty"`
 }
 
 func loadConfig(filename string) (*Config, error) {

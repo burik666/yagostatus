@@ -74,9 +74,10 @@ widgets:
 - `template` - The template that is applied to the output of the widget. 
 - `events` - List of commands to be executed on user actions.
     * `button` - X11 button ID (0 for any, 1 to 3 for left/middle/right mouse button. 4/5 for mouse wheel up/down. Default: `0`). 
+    * `modifiers` - List of X11 modifiers condition.
     * `command` - Command to execute (via `sh -c`).  
     Сlick_event json will be written to stdin.  
-    Also env variables are available: `$I3_NAME`, `$I3_INSTANCE`, `$I3_BUTTON`, `$I3_X`, `$I3_Y`, `$I3_RELATIVE_X`, `$I3_RELATIVE_Y`, `$I3_WIDTH`, `$I3_HEIGHT`.
+    Also env variables are available: `$I3_NAME`, `$I3_INSTANCE`, `$I3_BUTTON`, `$I3_MODIFIERS`, `$I3_X`, `$I3_Y`, `$I3_RELATIVE_X`, `$I3_RELATIVE_Y`, `$I3_WIDTH`, `$I3_HEIGHT`, `$I3_MODIFIERS`.
     * `output` - If `true` widget text will be replaced with the command output (default: `false`).
     * `name` - Filter by `name` for widgets with multiple blocks (default: empty).
     * `instance` - Filter by `instance` for widgets with multiple blocks (default: empty).
@@ -105,7 +106,14 @@ Example:
       name: ff
 
     - button: 1
+      modifiers:
+        - "!Control" # "!" must be quoted
       command: /usr/bin/chrome
+      name: ch
+
+    - button: 1
+        - Control
+      command: /usr/bin/chrome --incognito
       name: ch
 ```
 
