@@ -16,7 +16,7 @@ type ExecWidget struct {
 	command      string
 	interval     time.Duration
 	eventsUpdate bool
-	c            chan []ygs.I3BarBlock
+	c            chan<- []ygs.I3BarBlock
 }
 
 // Configure configures the widget.
@@ -62,7 +62,7 @@ func (w *ExecWidget) exec() error {
 }
 
 // Run starts the main loop.
-func (w *ExecWidget) Run(c chan []ygs.I3BarBlock) error {
+func (w *ExecWidget) Run(c chan<- []ygs.I3BarBlock) error {
 	w.c = c
 	if w.interval == 0 {
 		return w.exec()

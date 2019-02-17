@@ -35,7 +35,7 @@ func (w *WrapperWidget) Configure(cfg map[string]interface{}) error {
 }
 
 // Run starts the main loop.
-func (w *WrapperWidget) Run(c chan []ygs.I3BarBlock) error {
+func (w *WrapperWidget) Run(c chan<- []ygs.I3BarBlock) error {
 	w.cmd = exec.Command(w.command, w.args...)
 	w.cmd.Stderr = os.Stderr
 	stdout, err := w.cmd.StdoutPipe()

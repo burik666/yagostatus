@@ -14,7 +14,7 @@ func (w *BlankWidget) Configure(cfg map[string]interface{}) error {
 }
 
 // Run starts the main loop.
-func (w *BlankWidget) Run(c chan []ygs.I3BarBlock) error {
+func (w *BlankWidget) Run(c chan<- []ygs.I3BarBlock) error {
 	return nil
 }
 

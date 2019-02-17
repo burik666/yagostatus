@@ -23,7 +23,7 @@ func (w *StaticWidget) Configure(cfg map[string]interface{}) error {
 }
 
 // Run returns configured blocks.
-func (w *StaticWidget) Run(c chan []ygs.I3BarBlock) error {
+func (w *StaticWidget) Run(c chan<- []ygs.I3BarBlock) error {
 	c <- w.blocks
 	return nil
 }

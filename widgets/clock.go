@@ -32,7 +32,7 @@ func (w *ClockWidget) Configure(cfg map[string]interface{}) error {
 }
 
 // Run starts the main loop.
-func (w *ClockWidget) Run(c chan []ygs.I3BarBlock) error {
+func (w *ClockWidget) Run(c chan<- []ygs.I3BarBlock) error {
 	ticker := time.NewTicker(w.interval)
 	res := []ygs.I3BarBlock{
 		ygs.I3BarBlock{},

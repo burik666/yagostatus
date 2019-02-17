@@ -16,7 +16,7 @@ import (
 
 // HTTPWidget implements the http server widget.
 type HTTPWidget struct {
-	c      chan []ygs.I3BarBlock
+	c      chan<- []ygs.I3BarBlock
 	conn   *websocket.Conn
 	listen string
 	path   string
@@ -46,7 +46,7 @@ func (w *HTTPWidget) Configure(cfg map[string]interface{}) error {
 }
 
 // Run starts the main loop.
-func (w *HTTPWidget) Run(c chan []ygs.I3BarBlock) error {
+func (w *HTTPWidget) Run(c chan<- []ygs.I3BarBlock) error {
 	w.c = c
 
 	mux, ok := serveMuxes[w.listen]
