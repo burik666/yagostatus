@@ -2,11 +2,12 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"io/ioutil"
+	"strings"
 
 	"github.com/burik666/yagostatus/ygs"
 
+	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )
 
@@ -23,6 +24,19 @@ type ConfigWidget struct {
 	Events   []ConfigWidgetEvent
 }
 
+// Validate checks widget configuration.
+func (c ConfigWidget) Validate() error {
+	if c.Name == "" {
+		return errors.New("Missing widget name")
+	}
+	for _, e := range c.Events {
+		if err := e.Validate(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // ConfigWidgetEvent represents a widget events.
 type ConfigWidgetEvent struct {
 	Command   string   `yaml:"command"`
@@ -31,6 +45,25 @@ type ConfigWidgetEvent struct {
 	Name      string   `yaml:"name,omitempty"`
 	Instance  string   `yaml:"instance,omitempty"`
 	Output    bool     `yaml:"output,omitempty"`
+}
+
+// Validate checks event parameters.
+func (e ConfigWidgetEvent) Validate() error {
+	var availableWidgetEventModifiers = [...]string{"Shift", "Control", "Mod1", "Mod2", "Mod3", "Mod4", "Mod5"}
+	for _, mod := range e.Modifiers {
+		found := false
+		mod = strings.TrimLeft(mod, "!")
+		for _, m := range availableWidgetEventModifiers {
+			if mod == m {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return errors.Errorf("Unknown '%s' modifier", mod)
+		}
+	}
+	return nil
 }
 
 func loadConfig(filename string) (*Config, error) {
@@ -55,11 +88,7 @@ func parseConfig(data []byte) (*Config, error) {
 	for _, v := range tmp.Widgets {
 		widget := ConfigWidget{}
 
-		var ok bool
-		widget.Name, ok = v["widget"].(string)
-		if !ok {
-			return nil, errors.New("missing widget name")
-		}
+		widget.Name, _ = v["widget"].(string)
 		delete(v, "widget")
 
 		tpl, ok := v["template"]
@@ -78,6 +107,9 @@ func parseConfig(data []byte) (*Config, error) {
 		}
 
 		widget.Params = v
+		if err := widget.Validate(); err != nil {
+			return nil, err
+		}
 		config.Widgets = append(config.Widgets, widget)
 	}
 	return &config, nil
