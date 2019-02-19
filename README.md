@@ -28,12 +28,12 @@ Get the absolute path to the yagostatus binary:
     /home/burik/go/bin/yagostatus
 
 
-Replace `status_command` to `/home/burik/go/bin/yagostatus` in your i3 config file (`$GOPATH` in `status_command` is empty).
+Replace `status_command` to `~/go/bin/yagostatus` in your i3 config file.
 
 ### Troubleshooting
 Yagostatus outputs error messages in stderr, you can log them by redirecting stderr to a file.
 
-`status_command /home/burik/go/bin/yagostatus 2> /tmp/yagostatus.log`
+`status_command ~/go/bin/yagostatus --config ~/.config/i3/yagostatus.yml 2> /tmp/yagostatus.log`
 
 ## Configuration
 
@@ -71,12 +71,12 @@ widgets:
 ### Common parameters
 
 - `widget` - Widget name.
-- `template` - The template that is applied to the output of the widget. 
+- `template` - The template that is applied to the output of the widget.
 - `events` - List of commands to be executed on user actions.
-    * `button` - X11 button ID (0 for any, 1 to 3 for left/middle/right mouse button. 4/5 for mouse wheel up/down. Default: `0`). 
+    * `button` - X11 button ID (0 for any, 1 to 3 for left/middle/right mouse button. 4/5 for mouse wheel up/down. Default: `0`).
     * `modifiers` - List of X11 modifiers condition.
-    * `command` - Command to execute (via `sh -c`).  
-    Сlick_event json will be written to stdin.  
+    * `command` - Command to execute (via `sh -c`).
+    Сlick_event json will be written to stdin.
     Also env variables are available: `$I3_NAME`, `$I3_INSTANCE`, `$I3_BUTTON`, `$I3_MODIFIERS`, `$I3_X`, `$I3_Y`, `$I3_RELATIVE_X`, `$I3_RELATIVE_Y`, `$I3_WIDTH`, `$I3_HEIGHT`, `$I3_MODIFIERS`.
     * `output` - If `true` widget text will be replaced with the command output (default: `false`).
     * `name` - Filter by `name` for widgets with multiple blocks (default: empty).
@@ -137,7 +137,7 @@ This widget runs the command at the specified interval.
 
 ### Widget `wrapper`
 
-The wrapper widget starts the command and proxy received blocks (and click_events).  
+The wrapper widget starts the command and proxy received blocks (and click_events).
 See: https://i3wm.org/docs/i3bar-protocol.html
 
 - `command` - Command to execute.
@@ -155,7 +155,7 @@ The static widget renders the blocks. Useful for labels and buttons.
 The http widget starts http server and accept HTTP or Websocket requests.
 
 - `listen` - Address and port for binding (example: `localhost:9900`).
-- `path` - Path for receiving requests (example: `/mystatus/`).  
+- `path` - Path for receiving requests (example: `/mystatus/`).
 Must be unique for multiple widgets with same `listen`.
 
 For example, you can update the widget with the following command:
@@ -202,7 +202,7 @@ Send an empty array to clear:
 
 ### Weather
 
-To get access to weather API you need an APIID.  
+To get access to weather API you need an APIID.
 See https://openweathermap.org/appid for details.
 
 Requires [jq](https://stedolan.github.com/jq/) for json parsing.

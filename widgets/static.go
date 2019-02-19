@@ -12,14 +12,20 @@ type StaticWidget struct {
 	blocks []ygs.I3BarBlock
 }
 
-// Configure configures the widget.
-func (w *StaticWidget) Configure(cfg map[string]interface{}) error {
-	v, ok := cfg["blocks"]
+// NewStaticWidget returns a new StaticWidget.
+func NewStaticWidget(params map[string]interface{}) (ygs.Widget, error) {
+	w := &StaticWidget{}
+
+	v, ok := params["blocks"]
 	if !ok {
-		return errors.New("missing 'blocks' setting")
+		return nil, errors.New("missing 'blocks' setting")
 	}
 
-	return json.Unmarshal([]byte(v.(string)), &w.blocks)
+	if err := json.Unmarshal([]byte(v.(string)), &w.blocks); err != nil {
+		return nil, err
+	}
+
+	return w, nil
 }
 
 // Run returns configured blocks.
@@ -35,5 +41,5 @@ func (w *StaticWidget) Event(event ygs.I3BarClickEvent) {}
 func (w *StaticWidget) Stop() {}
 
 func init() {
-	ygs.RegisterWidget(&StaticWidget{})
+	ygs.RegisterWidget("static", NewStaticWidget)
 }

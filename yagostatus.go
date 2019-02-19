@@ -12,99 +12,60 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/burik666/yagostatus/internal/pkg/config"
+	_ "github.com/burik666/yagostatus/widgets"
 	"github.com/burik666/yagostatus/ygs"
 )
 
-// A YaGoStatus is the main struct.
+// YaGoStatus is the main struct.
 type YaGoStatus struct {
 	widgets       []ygs.Widget
 	widgetsOutput [][]ygs.I3BarBlock
-	widgetsConfig []ConfigWidget
-	upd           chan int
+	widgetsConfig []config.WidgetConfig
+
+	upd chan int
 }
 
-// Configure loads config from a file.
-func (status *YaGoStatus) Configure(configFile string) error {
-	config, err := loadConfig(configFile)
-	if err != nil {
-		status.errorWidget(err.Error())
-		config, err = parseConfig([]byte(`
-widgets:
-  - widget: static
-    blocks: >
-      [
-        {
-          "full_text": "YaGoStatus",
-          "color": "#2e9ef4"
-        }
-      ]
-    events:
-      - button: 1
-        command: xdg-open https://github.com/burik666/yagostatus/
-
-  - widget: wrapper
-    command: /usr/bin/i3status
-
-  - widget: clock
-    format: Jan _2 Mon 15:04:05 # https://golang.org/pkg/time/#Time.Format
-    template: >
-        {
-            "color": "#ffffff",
-            "separator": true,
-            "separator_block_width": 20
-        }`))
+// NewYaGoStatus returns a new YaGoStatus instance.
+func NewYaGoStatus(cfg config.Config) (*YaGoStatus, error) {
+	status := &YaGoStatus{}
+	for _, w := range cfg.Widgets {
+		widget, err := ygs.NewWidget(w.Name, w.Params)
 		if err != nil {
-			return err
-		}
-	}
-	for _, w := range config.Widgets {
-		widget, ok := ygs.NewWidget(w.Name + "widget")
-		if !ok {
-			status.errorWidget(fmt.Sprintf("Widget '%s' not found", w.Name))
+			status.errorWidget(err.Error())
 			continue
 		}
 
-		err := status.AddWidget(widget, w)
-		if err != nil {
-			status.errorWidget(fmt.Sprintf("Widget '%s' configuration error: %s", w.Name, err))
-			continue
-		}
+		status.AddWidget(widget, w)
 	}
-	return nil
+
+	return status, nil
 }
 
 func (status *YaGoStatus) errorWidget(text string) {
 	log.Print(text)
-	widget, ok := ygs.NewWidget("staticwidget")
-	if !ok {
-		log.Fatal("Failed to create error widget: 'staticwidget' not found")
-	}
 	blocks, _ := json.Marshal([]ygs.I3BarBlock{
 		ygs.I3BarBlock{
 			FullText: text,
 			Color:    "#ff0000",
 		},
 	})
-	err := status.AddWidget(widget, ConfigWidget{
-		Params: map[string]interface{}{
-			"blocks": string(blocks),
-		},
+
+	widget, err := ygs.NewWidget("static", map[string]interface{}{
+		"blocks": string(blocks),
 	})
 	if err != nil {
-		log.Fatalf("Failed to configure error widget: %s", err)
+		log.Fatalf("Failed to create error widget: %s", err)
 	}
+
+	status.AddWidget(widget, config.WidgetConfig{})
 }
 
 // AddWidget adds widget to statusbar.
-func (status *YaGoStatus) AddWidget(widget ygs.Widget, config ConfigWidget) error {
-	if err := widget.Configure(config.Params); err != nil {
-		return err
-	}
+func (status *YaGoStatus) AddWidget(widget ygs.Widget, config config.WidgetConfig) {
 	status.widgets = append(status.widgets, widget)
 	status.widgetsOutput = append(status.widgetsOutput, nil)
 	status.widgetsConfig = append(status.widgetsConfig, config)
-
-	return nil
 }
 
 func (status *YaGoStatus) processWidgetEvents(widgetIndex int, outputIndex int, event ygs.I3BarClickEvent) error {
@@ -147,8 +108,8 @@ func (status *YaGoStatus) processWidgetEvents(widgetIndex int, outputIndex int, 
 					for bi := range blocks {
 						block := &blocks[bi]
 						mergeBlocks(block, status.widgetsConfig[widgetIndex].Template)
-						block.Name = fmt.Sprintf("ygs-%d-%s", widgetIndex, block.Name)
-						block.Instance = fmt.Sprintf("ygs-%d-%d-%s", widgetIndex, outputIndex, block.Instance)
+						block.Name = fmt.Sprintf("yagostatus-%d-%s", widgetIndex, block.Name)
+						block.Instance = fmt.Sprintf("yagostatus-%d-%d-%s", widgetIndex, outputIndex, block.Instance)
 					}
 					status.widgetsOutput[widgetIndex] = blocks
 				} else {
@@ -172,29 +133,29 @@ func (status *YaGoStatus) eventReader() {
 			break
 		}
 		line = strings.Trim(line, "[], \n")
-		if line != "" {
-			var event ygs.I3BarClickEvent
-			if err := json.Unmarshal([]byte(line), &event); err != nil {
-				log.Printf("%s (%s)", err, line)
-			} else {
-				for i, widgetOutputs := range status.widgetsOutput {
-					for j, output := range widgetOutputs {
-						if (event.Name != "" && event.Name == output.Name) && (event.Instance != "" && event.Instance == output.Instance) {
-							e := event
-							e.Name = strings.Join(strings.Split(e.Name, "-")[2:], "-")
-							e.Instance = strings.Join(strings.Split(e.Instance, "-")[3:], "-")
-							if err := status.processWidgetEvents(i, j, e); err != nil {
-								log.Print(err)
-								status.widgetsOutput[i][j] = ygs.I3BarBlock{
-									FullText: fmt.Sprintf("Event error: %s", err.Error()),
-									Color:    "#ff0000",
-									Name:     event.Name,
-									Instance: event.Instance,
-								}
-								break
-
-							}
+		if line == "" {
+			continue
+		}
+		var event ygs.I3BarClickEvent
+		if err := json.Unmarshal([]byte(line), &event); err != nil {
+			log.Printf("%s (%s)", err, line)
+			continue
+		}
+		for widgetIndex, widgetOutputs := range status.widgetsOutput {
+			for outputIndex, output := range widgetOutputs {
+				if (event.Name != "" && event.Name == output.Name) && (event.Instance != "" && event.Instance == output.Instance) {
+					e := event
+					e.Name = strings.Join(strings.Split(e.Name, "-")[2:], "-")
+					e.Instance = strings.Join(strings.Split(e.Instance, "-")[3:], "-")
+					if err := status.processWidgetEvents(widgetIndex, outputIndex, e); err != nil {
+						log.Print(err)
+						status.widgetsOutput[widgetIndex][outputIndex] = ygs.I3BarBlock{
+							FullText: fmt.Sprintf("Event error: %s", err.Error()),
+							Color:    "#ff0000",
+							Name:     event.Name,
+							Instance: event.Instance,
 						}
+						break
 					}
 				}
 			}
@@ -205,24 +166,24 @@ func (status *YaGoStatus) eventReader() {
 // Run starts the main loop.
 func (status *YaGoStatus) Run() {
 	status.upd = make(chan int)
-	for i, widget := range status.widgets {
+	for widgetIndex, widget := range status.widgets {
 		c := make(chan []ygs.I3BarBlock)
-		go func(i int, c chan []ygs.I3BarBlock) {
+		go func(widgetIndex int, c chan []ygs.I3BarBlock) {
 			for {
 				select {
 				case out := <-c:
 					output := make([]ygs.I3BarBlock, len(out))
 					copy(output, out)
-					for j := range output {
-						mergeBlocks(&output[j], status.widgetsConfig[i].Template)
-						output[j].Name = fmt.Sprintf("ygs-%d-%s", i, output[j].Name)
-						output[j].Instance = fmt.Sprintf("ygs-%d-%d-%s", i, j, output[j].Instance)
+					for outputIndex := range output {
+						mergeBlocks(&output[outputIndex], status.widgetsConfig[widgetIndex].Template)
+						output[outputIndex].Name = fmt.Sprintf("yagostatus-%d-%s", widgetIndex, output[outputIndex].Name)
+						output[outputIndex].Instance = fmt.Sprintf("yagostatus-%d-%d-%s", widgetIndex, outputIndex, output[outputIndex].Instance)
 					}
-					status.widgetsOutput[i] = output
-					status.upd <- i
+					status.widgetsOutput[widgetIndex] = output
+					status.upd <- widgetIndex
 				}
 			}
-		}(i, c)
+		}(widgetIndex, c)
 
 		go func(widget ygs.Widget, c chan []ygs.I3BarBlock) {
 			if err := widget.Run(c); err != nil {

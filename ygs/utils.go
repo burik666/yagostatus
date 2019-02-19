@@ -2,28 +2,27 @@ package ygs
 
 import (
 	"log"
-	"reflect"
-	"strings"
+
+	"github.com/pkg/errors"
 )
 
-var registeredWidgets = make(map[string]reflect.Type)
+type newWidgetFunc = func(map[string]interface{}) (Widget, error)
+
+var registeredWidgets = make(map[string]newWidgetFunc)
 
 // RegisterWidget registers widget.
-func RegisterWidget(widget Widget) {
-	t := reflect.TypeOf(widget).Elem()
-	name := strings.ToLower(t.Name())
+func RegisterWidget(name string, newFunc newWidgetFunc) {
 	if _, ok := registeredWidgets[name]; ok {
 		log.Fatalf("Widget '%s' already registered", name)
 	}
-	registeredWidgets[name] = t
+	registeredWidgets[name] = newFunc
 }
 
 // NewWidget creates new widget by name.
-func NewWidget(name string) (Widget, bool) {
-	t, ok := registeredWidgets[name]
+func NewWidget(name string, params widgetParams) (Widget, error) {
+	newFunc, ok := registeredWidgets[name]
 	if !ok {
-		return nil, false
+		return nil, errors.Errorf("Widget '%s' not found", name)
 	}
-	v := reflect.New(t)
-	return v.Interface().(Widget), true
+	return newFunc(params)
 }

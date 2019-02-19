@@ -8,9 +8,9 @@ import (
 // BlankWidget is a widgets template.
 type BlankWidget struct{}
 
-// Configure configures the widget.
-func (w *BlankWidget) Configure(cfg map[string]interface{}) error {
-	return nil
+// NewBlankWidget returns a new BlankWidget.
+func NewBlankWidget(params map[string]interface{}) (ygs.Widget, error) {
+	return &BlankWidget{}, nil
 }
 
 // Run starts the main loop.
@@ -25,5 +25,5 @@ func (w *BlankWidget) Event(event ygs.I3BarClickEvent) {}
 func (w *BlankWidget) Stop() {}
 
 func init() {
-	ygs.RegisterWidget(&BlankWidget{})
+	ygs.RegisterWidget("blank", NewBlankWidget)
 }

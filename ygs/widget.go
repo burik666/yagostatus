@@ -6,12 +6,13 @@ import (
 	"encoding/json"
 )
 
+type widgetParams = map[string]interface{}
+
 // Widget represents a widget struct.
 type Widget interface {
 	Run(chan<- []I3BarBlock) error
 	Event(I3BarClickEvent)
 	Stop()
-	Configure(map[string]interface{}) error
 }
 
 // UnmarshalJSON unmarshals json with custom keys (with _ prefix).

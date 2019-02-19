@@ -3,6 +3,7 @@ package widgets
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -19,28 +20,30 @@ type ExecWidget struct {
 	c            chan<- []ygs.I3BarBlock
 }
 
-// Configure configures the widget.
-func (w *ExecWidget) Configure(cfg map[string]interface{}) error {
-	v, ok := cfg["command"]
+// NewExecWidget returns a new ExecWidget.
+func NewExecWidget(params map[string]interface{}) (ygs.Widget, error) {
+	w := &ExecWidget{}
+
+	v, ok := params["command"]
 	if !ok {
-		return errors.New("missing 'command' setting")
+		return nil, errors.New("missing 'command' setting")
 	}
 	w.command = v.(string)
 
-	v, ok = cfg["interval"]
+	v, ok = params["interval"]
 	if !ok {
-		return errors.New("missing 'interval' setting")
+		return nil, errors.New("missing 'interval' setting")
 	}
 	w.interval = time.Second * time.Duration(v.(int))
 
-	v, ok = cfg["events_update"]
+	v, ok = params["events_update"]
 	if ok {
 		w.eventsUpdate = v.(bool)
 	} else {
 		w.eventsUpdate = false
 	}
 
-	return nil
+	return w, nil
 }
 
 func (w *ExecWidget) exec() error {
@@ -54,6 +57,7 @@ func (w *ExecWidget) exec() error {
 	var blocks []ygs.I3BarBlock
 	err = json.Unmarshal(output, &blocks)
 	if err != nil {
+		log.Printf("Failed to parse output: %s", err)
 		blocks = append(blocks, ygs.I3BarBlock{FullText: strings.Trim(string(output), "\n ")})
 	}
 	w.c <- blocks
@@ -90,5 +94,5 @@ func (w *ExecWidget) Event(event ygs.I3BarClickEvent) {
 func (w *ExecWidget) Stop() {}
 
 func init() {
-	ygs.RegisterWidget(&ExecWidget{})
+	ygs.RegisterWidget("exec", NewExecWidget)
 }

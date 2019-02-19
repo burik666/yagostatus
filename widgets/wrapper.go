@@ -20,18 +20,20 @@ type WrapperWidget struct {
 	args    []string
 }
 
-// Configure configures the widget.
-func (w *WrapperWidget) Configure(cfg map[string]interface{}) error {
-	v, ok := cfg["command"]
+// NewWrapperWidget returns a new WrapperWidget.
+func NewWrapperWidget(params map[string]interface{}) (ygs.Widget, error) {
+	w := &WrapperWidget{}
+
+	v, ok := params["command"]
 	if !ok {
-		return errors.New("missing 'command' setting")
+		return nil, errors.New("missing 'command' setting")
 	}
 	r := regexp.MustCompile("'.+'|\".+\"|\\S+")
 	m := r.FindAllString(v.(string), -1)
 	w.command = m[0]
 	w.args = m[1:]
 
-	return nil
+	return w, nil
 }
 
 // Run starts the main loop.
@@ -98,5 +100,5 @@ func (w *WrapperWidget) Event(event ygs.I3BarClickEvent) {
 func (w *WrapperWidget) Stop() {}
 
 func init() {
-	ygs.RegisterWidget(&WrapperWidget{})
+	ygs.RegisterWidget("wrapper", NewWrapperWidget)
 }

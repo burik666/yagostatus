@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"encoding/json"
@@ -13,19 +13,20 @@ import (
 
 // Config represents the main configuration.
 type Config struct {
-	Widgets []ConfigWidget
+	Widgets []WidgetConfig `yaml:"widgets"`
 }
 
-// ConfigWidget represents a widget configuration.
-type ConfigWidget struct {
-	Name     string
-	Params   map[string]interface{}
-	Template ygs.I3BarBlock
-	Events   []ConfigWidgetEvent
+// WidgetConfig represents a widget configuration.
+type WidgetConfig struct {
+	Name     string              `yaml:"widget"`
+	Template ygs.I3BarBlock      `yaml:"-"`
+	Events   []WidgetEventConfig `yaml:"events"`
+
+	Params map[string]interface{}
 }
 
 // Validate checks widget configuration.
-func (c ConfigWidget) Validate() error {
+func (c WidgetConfig) Validate() error {
 	if c.Name == "" {
 		return errors.New("Missing widget name")
 	}
@@ -37,8 +38,8 @@ func (c ConfigWidget) Validate() error {
 	return nil
 }
 
-// ConfigWidgetEvent represents a widget events.
-type ConfigWidgetEvent struct {
+// WidgetEventConfig represents a widget events.
+type WidgetEventConfig struct {
 	Command   string   `yaml:"command"`
 	Button    uint8    `yaml:"button"`
 	Modifiers []string `yaml:"modifiers,omitempty"`
@@ -48,7 +49,7 @@ type ConfigWidgetEvent struct {
 }
 
 // Validate checks event parameters.
-func (e ConfigWidgetEvent) Validate() error {
+func (e WidgetEventConfig) Validate() error {
 	var availableWidgetEventModifiers = [...]string{"Shift", "Control", "Mod1", "Mod2", "Mod3", "Mod4", "Mod5"}
 	for _, mod := range e.Modifiers {
 		found := false
@@ -66,51 +67,50 @@ func (e ConfigWidgetEvent) Validate() error {
 	return nil
 }
 
-func loadConfig(filename string) (*Config, error) {
+// LoadFile loads and parses config from file.
+func LoadFile(filename string) (*Config, error) {
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
-	return parseConfig(data)
+	return Parse(data)
 }
 
-func parseConfig(data []byte) (*Config, error) {
+// Parse parses config.
+func Parse(data []byte) (*Config, error) {
 
-	var tmp struct {
+	var raw struct {
 		Widgets []map[string]interface{} `yaml:"widgets"`
-	}
-	if err := yaml.Unmarshal(data, &tmp); err != nil {
-		return nil, err
 	}
 
 	config := Config{}
+	if err := yaml.Unmarshal(data, &config); err != nil {
+		return nil, err
+	}
 
-	for _, v := range tmp.Widgets {
-		widget := ConfigWidget{}
+	if err := yaml.Unmarshal(data, &raw); err != nil {
+		return nil, err
+	}
 
-		widget.Name, _ = v["widget"].(string)
-		delete(v, "widget")
+	for widgetIndex := range config.Widgets {
+		widget := &config.Widgets[widgetIndex]
+		params := raw.Widgets[widgetIndex]
 
-		tpl, ok := v["template"]
+		tpl, ok := params["template"]
 		if ok {
 			if err := json.Unmarshal([]byte(tpl.(string)), &widget.Template); err != nil {
 				return nil, err
 			}
-			delete(v, "template")
 		}
 
-		events, ok := v["events"]
-		if ok {
-			ymlevents, _ := yaml.Marshal(events)
-			yaml.Unmarshal(ymlevents, &widget.Events)
-			delete(v, "events")
-		}
-
-		widget.Params = v
+		widget.Params = params
 		if err := widget.Validate(); err != nil {
 			return nil, err
 		}
-		config.Widgets = append(config.Widgets, widget)
+
+		delete(params, "widget")
+		delete(params, "template")
+		delete(params, "events")
 	}
 	return &config, nil
 }

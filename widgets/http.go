@@ -22,19 +22,18 @@ type HTTPWidget struct {
 	path   string
 }
 
-var serveMuxes map[string]*http.ServeMux
-
-// Configure configures the widget.
-func (w *HTTPWidget) Configure(cfg map[string]interface{}) error {
-	v, ok := cfg["listen"]
+// NewHTTPWidget returns a new HTTPWidget.
+func NewHTTPWidget(params map[string]interface{}) (ygs.Widget, error) {
+	w := &HTTPWidget{}
+	v, ok := params["listen"]
 	if !ok {
-		return errors.New("missing 'listen' setting")
+		return nil, errors.New("missing 'listen' setting")
 	}
 	w.listen = v.(string)
 
-	v, ok = cfg["path"]
+	v, ok = params["path"]
 	if !ok {
-		return errors.New("missing 'path' setting")
+		return nil, errors.New("missing 'path' setting")
 	}
 	w.path = v.(string)
 
@@ -42,8 +41,10 @@ func (w *HTTPWidget) Configure(cfg map[string]interface{}) error {
 		serveMuxes = make(map[string]*http.ServeMux, 1)
 	}
 
-	return nil
+	return w, nil
 }
+
+var serveMuxes map[string]*http.ServeMux
 
 // Run starts the main loop.
 func (w *HTTPWidget) Run(c chan<- []ygs.I3BarBlock) error {
@@ -125,5 +126,5 @@ func (w *HTTPWidget) wsHandler(ws *websocket.Conn) {
 func (w *HTTPWidget) Stop() {}
 
 func init() {
-	ygs.RegisterWidget(&HTTPWidget{})
+	ygs.RegisterWidget("http", NewHTTPWidget)
 }

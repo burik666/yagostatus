@@ -13,22 +13,23 @@ type ClockWidget struct {
 	interval time.Duration
 }
 
-// Configure configures the widget.
-func (w *ClockWidget) Configure(cfg map[string]interface{}) error {
-	v, ok := cfg["format"]
+// NewClockWidget returns a new ClockWidget.
+func NewClockWidget(params map[string]interface{}) (ygs.Widget, error) {
+	w := &ClockWidget{}
+
+	v, ok := params["format"]
 	if !ok {
-		return errors.New("missing 'format' setting")
+		return nil, errors.New("missing 'format' setting")
 	}
 	w.format = v.(string)
 
-	v, ok = cfg["interval"]
+	v, ok = params["interval"]
 	if ok {
 		w.interval = time.Duration(v.(int)) * time.Second
 	} else {
 		w.interval = time.Second
 	}
-
-	return nil
+	return w, nil
 }
 
 // Run starts the main loop.
@@ -55,5 +56,5 @@ func (w *ClockWidget) Event(event ygs.I3BarClickEvent) {}
 func (w *ClockWidget) Stop() {}
 
 func init() {
-	ygs.RegisterWidget(&ClockWidget{})
+	ygs.RegisterWidget("clock", NewClockWidget)
 }
