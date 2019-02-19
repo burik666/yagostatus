@@ -15,6 +15,8 @@ import (
 	"github.com/burik666/yagostatus/internal/pkg/config"
 	_ "github.com/burik666/yagostatus/widgets"
 	"github.com/burik666/yagostatus/ygs"
+
+	"go.i3wm.org/i3"
 )
 
 // YaGoStatus is the main struct.
@@ -24,6 +26,9 @@ type YaGoStatus struct {
 	widgetsConfig []config.WidgetConfig
 
 	upd chan int
+
+	workspaces        []i3.Workspace
+	visibleWorkspaces []string
 }
 
 // NewYaGoStatus returns a new YaGoStatus instance.
@@ -185,6 +190,19 @@ func (status *YaGoStatus) Run() {
 			}
 		}(widgetIndex, c)
 
+		status.updateWorkspaces()
+		go (func() {
+			recv := i3.Subscribe(i3.WorkspaceEventType)
+			for recv.Next() {
+				e := recv.Event().(*i3.WorkspaceEvent)
+				if e.Change == "empty" {
+					continue
+				}
+				status.updateWorkspaces()
+				status.upd <- -1
+			}
+		})()
+
 		go func(widget ygs.Widget, c chan []ygs.I3BarBlock) {
 			if err := widget.Run(c); err != nil {
 				log.Print(err)
@@ -206,8 +224,10 @@ func (status *YaGoStatus) Run() {
 			select {
 			case <-status.upd:
 				var result []ygs.I3BarBlock
-				for _, widgetOutput := range status.widgetsOutput {
-					result = append(result, widgetOutput...)
+				for widgetIndex, widgetOutput := range status.widgetsOutput {
+					if checkWorkspaceConditions(status.widgetsConfig[widgetIndex].Workspaces, status.visibleWorkspaces) {
+						result = append(result, widgetOutput...)
+					}
 				}
 				buf.Reset()
 				encoder.Encode(result)
@@ -232,6 +252,21 @@ func (status *YaGoStatus) Stop() {
 	wg.Wait()
 }
 
+func (status *YaGoStatus) updateWorkspaces() {
+	var err error
+	status.workspaces, err = i3.GetWorkspaces()
+	if err != nil {
+		log.Printf("Failed to get workspaces: %s", err)
+	}
+	var vw []string
+	for i := range status.workspaces {
+		if status.workspaces[i].Visible {
+			vw = append(vw, status.workspaces[i].Name)
+		}
+	}
+	status.visibleWorkspaces = vw
+}
+
 func mergeBlocks(b *ygs.I3BarBlock, tpl ygs.I3BarBlock) {
 	var resmap map[string]interface{}
 
@@ -244,12 +279,12 @@ func mergeBlocks(b *ygs.I3BarBlock, tpl ygs.I3BarBlock) {
 	json.Unmarshal(jb, b)
 }
 
-func checkModifiers(conditions []string, modifiers []string) bool {
+func checkModifiers(conditions []string, values []string) bool {
 	for _, c := range conditions {
 		isNegative := c[0] == '!'
 		c = strings.TrimLeft(c, "!")
 		found := false
-		for _, v := range modifiers {
+		for _, v := range values {
 			if c == v {
 				found = true
 				break
@@ -263,4 +298,29 @@ func checkModifiers(conditions []string, modifiers []string) bool {
 		}
 	}
 	return true
+}
+
+func checkWorkspaceConditions(conditions []string, values []string) bool {
+	if len(conditions) == 0 {
+		return true
+	}
+	pass := 0
+	for _, c := range conditions {
+		isNegative := c[0] == '!'
+		c = strings.TrimLeft(c, "!")
+		found := false
+		for _, v := range values {
+			if c == v {
+				found = true
+				break
+			}
+		}
+		if found && !isNegative {
+			return true
+		}
+		if !found && isNegative {
+			pass++
+		}
+	}
+	return len(conditions) == pass
 }

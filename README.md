@@ -14,6 +14,7 @@ Yet Another i3status replacement written in Go.
 - Handling click events.
 - Shell scripting widgets and events handlers.
 - Wrapping other status programs (i3status, py3status, conky, etc.).
+- Different widgets on different workspaces.
 - Templates for widgets outputs.
 - Update widget via http/websocket requests.
 
@@ -71,6 +72,34 @@ widgets:
 ### Common parameters
 
 - `widget` - Widget name.
+- `workspaces` - List of workspaces to display the widget.
+
+Example:
+```yml
+- widget: static
+  workspaces:
+    - "1:www"
+    - "2:IM"
+
+  blocks: >
+    [
+        {
+            "full_text": "Visible only on 1:www and 2:IM workspaces"
+        }
+    ]
+
+- widget: static
+  workspaces:
+    - "!1:www"
+
+  blocks: >
+    [
+        {
+            "full_text": "Visible on all workspaces except 1:www"
+        }
+    ]
+```
+
 - `template` - The template that is applied to the output of the widget.
 - `events` - List of commands to be executed on user actions.
     * `button` - X11 button ID (0 for any, 1 to 3 for left/middle/right mouse button. 4/5 for mouse wheel up/down. Default: `0`).

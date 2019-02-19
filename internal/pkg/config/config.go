@@ -18,9 +18,10 @@ type Config struct {
 
 // WidgetConfig represents a widget configuration.
 type WidgetConfig struct {
-	Name     string              `yaml:"widget"`
-	Template ygs.I3BarBlock      `yaml:"-"`
-	Events   []WidgetEventConfig `yaml:"events"`
+	Name       string              `yaml:"widget"`
+	Workspaces []string            `yaml:"workspaces"`
+	Template   ygs.I3BarBlock      `yaml:"-"`
+	Events     []WidgetEventConfig `yaml:"events"`
 
 	Params map[string]interface{}
 }
@@ -109,6 +110,7 @@ func Parse(data []byte) (*Config, error) {
 		}
 
 		delete(params, "widget")
+		delete(params, "workspaces")
 		delete(params, "template")
 		delete(params, "events")
 	}
