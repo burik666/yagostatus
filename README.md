@@ -7,7 +7,7 @@ Yet Another i3status replacement written in Go.
 [![Twitter](https://img.shields.io/twitter/url/https/github.com/burik666/yagostatus.svg?style=social)](https://twitter.com/intent/tweet?text=Yet%20Another%20i3status%20replacement%20written%20in%20Go.%0A&url=https%3A%2F%2Fgithub.com%2Fburik666%2Fyagostatus&hashtags=i3,i3wm,i3status,golang)
 
 
-[![yagostatus](https://gist.githubusercontent.com/burik666/da88db63b9a85863ad585646c03488b8/raw/yagostatus_example.gif)](https://gist.github.com/burik666/da88db63b9a85863ad585646c03488b8)
+[![yagostatus.gif](https://raw.githubusercontent.com/wiki/burik666/yagostatus/yagostatus.gif)](https://github.com/burik666/yagostatus/wiki/Conky)
 
 ## Features
 - Instant and independent updating of widgets.
