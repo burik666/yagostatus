@@ -14,6 +14,10 @@ type I3BarBlock struct {
 	ShortText           string                 `json:"short_text,omitempty"`
 	Color               string                 `json:"color,omitempty"`
 	BorderColor         string                 `json:"border,omitempty"`
+	BorderTop           *uint16                `json:"border_top,omitempty"`
+	BorderBottom        *uint16                `json:"border_bottom,omitempty"`
+	BorderLeft          *uint16                `json:"border_left,omitempty"`
+	BorderRight         *uint16                `json:"border_right,omitempty"`
 	BackgroundColor     string                 `json:"background,omitempty"`
 	Markup              string                 `json:"markup,omitempty"`
 	MinWidth            string                 `json:"min_width,omitempty"`
