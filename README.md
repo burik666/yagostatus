@@ -17,6 +17,7 @@ Yet Another i3status replacement written in Go.
 - Different widgets on different workspaces.
 - Templates for widgets outputs.
 - Update widget via http/websocket requests.
+- Update widget by POSIX Real-Time Signals (SIGRTMIN-SIGRTMAX).
 
 ## Installation
 
@@ -162,6 +163,11 @@ This widget runs the command at the specified interval.
 - `command` - Command to execute (via `sh -c`).
 - `interval` - Update interval in seconds (set 0 to run once at start).
 - `events_update` - Update widget if an event occurred (default: `false`).
+- `signal` - SIGRTMIN offset to update widget. Should be between 0 and `SIGRTMIN`-`SIGRTMAX`.
+
+Use pkill to send signals:
+
+    pkill -SIGRTMIN+1 yagostatus
 
 
 ### Widget `wrapper`
@@ -199,6 +205,13 @@ Send an empty array to clear:
 ## Examples
 
 ### Volume control
+i3 config:
+```
+bindsym XF86AudioLowerVolume exec amixer -c 1 -q set Master 1%-; exec pkill -SIGRTMIN+1 yagostatus
+bindsym XF86AudioRaiseVolume exec amixer -c 1 -q set Master 1%+; exec pkill -SIGRTMIN+1 yagostatus
+bindsym XF86AudioMute exec amixer -q set Master toggle; exec pkill -SIGRTMIN+1 yagostatus
+```
+
 ```yml
   - widget: exec
     command: |
@@ -210,6 +223,7 @@ Send an empty array to clear:
         echo -e '[{"full_text": "<span font_family=\"Symbola\">\xF0\x9F\x94\x8A</span> '${res[0]}'", "color": "'$color'"}]'
 
     interval: 0
+    signal: 1
     events_update: true
     events:
         - button: 1
