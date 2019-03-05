@@ -63,10 +63,12 @@ func main() {
 				log.Fatalf("Failed to parse builtin config: %s", err)
 			}
 		}
+		if cfgError != nil {
+			cfg = &config.Config{}
+		}
 	} else {
 		cfg, cfgError = config.LoadFile(configFile)
 		if cfgError != nil {
-			log.Printf("Failed to load config file: %s", cfgError)
 			cfg = &config.Config{}
 		}
 	}
@@ -76,6 +78,7 @@ func main() {
 		log.Fatalf("Failed to create yagostatus instance: %s", err)
 	}
 	if cfgError != nil {
+		log.Printf("Failed to load config: %s", cfgError)
 		yaGoStatus.errorWidget(cfgError.Error())
 	}
 

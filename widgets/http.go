@@ -14,56 +14,83 @@ import (
 	"golang.org/x/net/websocket"
 )
 
+// HTTPWidgetParams are widget parameters.
+type HTTPWidgetParams struct {
+	Listen string
+	Path   string
+}
+
 // HTTPWidget implements the http server widget.
 type HTTPWidget struct {
-	c      chan<- []ygs.I3BarBlock
-	conn   *websocket.Conn
-	listen string
-	path   string
+	params HTTPWidgetParams
+
+	httpServer *http.Server
+	conn       *websocket.Conn
+	c          chan<- []ygs.I3BarBlock
+}
+
+type httpInstance struct {
+	mux   *http.ServeMux
+	paths map[string]struct{}
+}
+
+var instances map[string]*httpInstance
+
+func init() {
+	ygs.RegisterWidget("http", NewHTTPWidget, HTTPWidgetParams{})
 }
 
 // NewHTTPWidget returns a new HTTPWidget.
-func NewHTTPWidget(params map[string]interface{}) (ygs.Widget, error) {
-	w := &HTTPWidget{}
-	v, ok := params["listen"]
-	if !ok {
-		return nil, errors.New("missing 'listen' setting")
+func NewHTTPWidget(params interface{}) (ygs.Widget, error) {
+	w := &HTTPWidget{
+		params: params.(HTTPWidgetParams),
 	}
-	w.listen = v.(string)
 
-	v, ok = params["path"]
-	if !ok {
+	if len(w.params.Listen) == 0 {
+		return nil, errors.New("missing 'listen' param")
+	}
+
+	if len(w.params.Path) == 0 {
 		return nil, errors.New("missing 'path' setting")
 	}
-	w.path = v.(string)
 
-	if serveMuxes == nil {
-		serveMuxes = make(map[string]*http.ServeMux, 1)
+	if instances == nil {
+		instances = make(map[string]*httpInstance, 1)
+	}
+
+	if instance, ok := instances[w.params.Listen]; ok {
+		if _, ok := instance.paths[w.params.Path]; ok {
+			return nil, fmt.Errorf("path '%s' already in use", w.params.Path)
+		}
+		instance.mux.HandleFunc(w.params.Path, w.httpHandler)
+		instance.paths[w.params.Path] = struct{}{}
+	} else {
+		instance := &httpInstance{
+			mux:   http.NewServeMux(),
+			paths: make(map[string]struct{}, 1),
+		}
+		instance.mux.HandleFunc(w.params.Path, w.httpHandler)
+		instance.paths[w.params.Path] = struct{}{}
+		instances[w.params.Listen] = instance
+
+		w.httpServer = &http.Server{
+			Addr:    w.params.Listen,
+			Handler: instance.mux,
+		}
+
 	}
 
 	return w, nil
 }
 
-var serveMuxes map[string]*http.ServeMux
-
 // Run starts the main loop.
 func (w *HTTPWidget) Run(c chan<- []ygs.I3BarBlock) error {
 	w.c = c
-
-	mux, ok := serveMuxes[w.listen]
-	if ok {
-		mux.HandleFunc(w.path, w.httpHandler)
+	if w.httpServer == nil {
 		return nil
 	}
-	mux = http.NewServeMux()
-	mux.HandleFunc(w.path, w.httpHandler)
 
-	httpServer := &http.Server{
-		Addr:    w.listen,
-		Handler: mux,
-	}
-	serveMuxes[w.listen] = mux
-	return httpServer.ListenAndServe()
+	return w.httpServer.ListenAndServe()
 }
 
 // Event processes the widget events.
@@ -124,7 +151,3 @@ func (w *HTTPWidget) wsHandler(ws *websocket.Conn) {
 
 // Stop shutdowns the widget.
 func (w *HTTPWidget) Stop() {}
-
-func init() {
-	ygs.RegisterWidget("http", NewHTTPWidget)
-}

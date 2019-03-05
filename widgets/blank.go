@@ -5,11 +5,18 @@ import (
 	"github.com/burik666/yagostatus/ygs"
 )
 
+// BlankWidgetParams are widget parameters.
+type BlankWidgetParams struct{}
+
 // BlankWidget is a widgets template.
 type BlankWidget struct{}
 
+func init() {
+	ygs.RegisterWidget("blank", NewBlankWidget, BlankWidgetParams{})
+}
+
 // NewBlankWidget returns a new BlankWidget.
-func NewBlankWidget(params map[string]interface{}) (ygs.Widget, error) {
+func NewBlankWidget(params interface{}) (ygs.Widget, error) {
 	return &BlankWidget{}, nil
 }
 
@@ -23,7 +30,3 @@ func (w *BlankWidget) Event(event ygs.I3BarClickEvent) {}
 
 // Stop shutdowns the widget.
 func (w *BlankWidget) Stop() {}
-
-func init() {
-	ygs.RegisterWidget("blank", NewBlankWidget)
-}

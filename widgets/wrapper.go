@@ -8,28 +8,41 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"syscall"
 
 	"github.com/burik666/yagostatus/ygs"
 )
 
+// WrapperWidgetParams are widget parameters.
+type WrapperWidgetParams struct {
+	Command string
+}
+
 // WrapperWidget implements the wrapper of other status commands.
 type WrapperWidget struct {
+	params WrapperWidgetParams
+
 	stdin   io.WriteCloser
 	cmd     *exec.Cmd
 	command string
 	args    []string
 }
 
-// NewWrapperWidget returns a new WrapperWidget.
-func NewWrapperWidget(params map[string]interface{}) (ygs.Widget, error) {
-	w := &WrapperWidget{}
+func init() {
+	ygs.RegisterWidget("wrapper", NewWrapperWidget, WrapperWidgetParams{})
+}
 
-	v, ok := params["command"]
-	if !ok {
+// NewWrapperWidget returns a new WrapperWidget.
+func NewWrapperWidget(params interface{}) (ygs.Widget, error) {
+	w := &WrapperWidget{
+		params: params.(WrapperWidgetParams),
+	}
+
+	if len(w.params.Command) == 0 {
 		return nil, errors.New("missing 'command' setting")
 	}
 	r := regexp.MustCompile("'.+'|\".+\"|\\S+")
-	m := r.FindAllString(v.(string), -1)
+	m := r.FindAllString(w.params.Command, -1)
 	w.command = m[0]
 	w.args = m[1:]
 
@@ -97,8 +110,9 @@ func (w *WrapperWidget) Event(event ygs.I3BarClickEvent) {
 }
 
 // Stop shutdowns the widget.
-func (w *WrapperWidget) Stop() {}
-
-func init() {
-	ygs.RegisterWidget("wrapper", NewWrapperWidget)
+func (w *WrapperWidget) Stop() {
+	if w.cmd != nil && w.cmd.Process != nil {
+		w.cmd.Process.Signal(syscall.SIGHUP)
+		w.cmd.Process.Wait()
+	}
 }

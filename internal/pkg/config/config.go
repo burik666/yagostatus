@@ -2,12 +2,13 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"strings"
 
 	"github.com/burik666/yagostatus/ygs"
 
-	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )
 
@@ -62,7 +63,7 @@ func (e WidgetEventConfig) Validate() error {
 			}
 		}
 		if !found {
-			return errors.Errorf("Unknown '%s' modifier", mod)
+			return fmt.Errorf("Unknown '%s' modifier", mod)
 		}
 	}
 	return nil
@@ -79,19 +80,15 @@ func LoadFile(filename string) (*Config, error) {
 
 // Parse parses config.
 func Parse(data []byte) (*Config, error) {
-
 	var raw struct {
 		Widgets []map[string]interface{} `yaml:"widgets"`
 	}
 
 	config := Config{}
 	if err := yaml.Unmarshal(data, &config); err != nil {
-		return nil, err
+		return nil, trimYamlErr(err, false)
 	}
-
-	if err := yaml.Unmarshal(data, &raw); err != nil {
-		return nil, err
-	}
+	yaml.Unmarshal(data, &raw)
 
 	for widgetIndex := range config.Widgets {
 		widget := &config.Widgets[widgetIndex]
@@ -104,9 +101,24 @@ func Parse(data []byte) (*Config, error) {
 			}
 		}
 
+		tmp, _ := yaml.Marshal(params["events"])
+		if err := yaml.UnmarshalStrict(tmp, &widget.Events); err != nil {
+			name, params := ygs.ErrorWidget(trimYamlErr(err, true).Error())
+			*widget = WidgetConfig{
+				Name:   name,
+				Params: params,
+			}
+			continue
+		}
+
 		widget.Params = params
 		if err := widget.Validate(); err != nil {
-			return nil, err
+			name, params := ygs.ErrorWidget(trimYamlErr(err, true).Error())
+			*widget = WidgetConfig{
+				Name:   name,
+				Params: params,
+			}
+			continue
 		}
 
 		delete(params, "widget")
@@ -115,4 +127,13 @@ func Parse(data []byte) (*Config, error) {
 		delete(params, "events")
 	}
 	return &config, nil
+}
+
+func trimYamlErr(err error, trimLineN bool) error {
+	msg := strings.TrimPrefix(err.Error(), "yaml: unmarshal errors:\n  ")
+	if trimLineN {
+		msg = strings.TrimPrefix(msg, "line ")
+		msg = strings.TrimLeft(msg, "1234567890: ")
+	}
+	return errors.New(msg)
 }

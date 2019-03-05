@@ -24,13 +24,7 @@ Yet Another i3status replacement written in Go.
     go get github.com/burik666/yagostatus
     cp $GOPATH/src/github.com/burik666/yagostatus/yagostatus.yml ~/.config/i3/yagostatus.yml
 
-Get the absolute path to the yagostatus binary:
-
-    $ echo $GOPATH/bin/yagostatus
-    /home/burik/go/bin/yagostatus
-
-
-Replace `status_command` to `~/go/bin/yagostatus` in your i3 config file.
+Replace `status_command` to `~/go/bin/yagostatus --config ~/.config/i3/yagostatus.yml` in your i3 config file.
 
 ### Troubleshooting
 Yagostatus outputs error messages in stderr, you can log them by redirecting stderr to a file.
