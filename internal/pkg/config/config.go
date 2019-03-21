@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"strings"
 
+	"github.com/burik666/yagostatus/internal/pkg/executor"
 	"github.com/burik666/yagostatus/ygs"
 
 	"gopkg.in/yaml.v2"
@@ -32,8 +33,8 @@ func (c WidgetConfig) Validate() error {
 	if c.Name == "" {
 		return errors.New("Missing widget name")
 	}
-	for _, e := range c.Events {
-		if err := e.Validate(); err != nil {
+	for ei := range c.Events {
+		if err := c.Events[ei].Validate(); err != nil {
 			return err
 		}
 	}
@@ -42,16 +43,16 @@ func (c WidgetConfig) Validate() error {
 
 // WidgetEventConfig represents a widget events.
 type WidgetEventConfig struct {
-	Command   string   `yaml:"command"`
-	Button    uint8    `yaml:"button"`
-	Modifiers []string `yaml:"modifiers,omitempty"`
-	Name      string   `yaml:"name,omitempty"`
-	Instance  string   `yaml:"instance,omitempty"`
-	Output    bool     `yaml:"output,omitempty"`
+	Command      string                `yaml:"command"`
+	Button       uint8                 `yaml:"button"`
+	Modifiers    []string              `yaml:"modifiers,omitempty"`
+	Name         string                `yaml:"name,omitempty"`
+	Instance     string                `yaml:"instance,omitempty"`
+	OutputFormat executor.OutputFormat `yaml:"output_format,omitempty"`
 }
 
 // Validate checks event parameters.
-func (e WidgetEventConfig) Validate() error {
+func (e *WidgetEventConfig) Validate() error {
 	var availableWidgetEventModifiers = [...]string{"Shift", "Control", "Mod1", "Mod2", "Mod3", "Mod4", "Mod5"}
 	for _, mod := range e.Modifiers {
 		found := false
@@ -65,6 +66,9 @@ func (e WidgetEventConfig) Validate() error {
 		if !found {
 			return fmt.Errorf("Unknown '%s' modifier", mod)
 		}
+	}
+	if e.OutputFormat == "" {
+		e.OutputFormat = executor.OutputFormatNone
 	}
 	return nil
 }

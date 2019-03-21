@@ -102,7 +102,7 @@ Example:
     * `command` - Command to execute (via `sh -c`).
     Сlick_event json will be written to stdin.
     Also env variables are available: `$I3_NAME`, `$I3_INSTANCE`, `$I3_BUTTON`, `$I3_MODIFIERS`, `$I3_X`, `$I3_Y`, `$I3_RELATIVE_X`, `$I3_RELATIVE_Y`, `$I3_WIDTH`, `$I3_HEIGHT`, `$I3_MODIFIERS`.
-    * `output` - If `true` widget text will be replaced with the command output (default: `false`).
+    * `output_format` - The command output format (none, text, json, auto) (default: `none`).
     * `name` - Filter by `name` for widgets with multiple blocks (default: empty).
     * `instance` - Filter by `instance` for widgets with multiple blocks (default: empty).
 
@@ -157,6 +157,7 @@ This widget runs the command at the specified interval.
 - `command` - Command to execute (via `sh -c`).
 - `interval` - Update interval in seconds (set 0 to run once at start).
 - `events_update` - Update widget if an event occurred (default: `false`).
+- `output_format` - The command output format (none, text, json, auto) (default: `auto`).
 - `signal` - SIGRTMIN offset to update widget. Should be between 0 and `SIGRTMIN`-`SIGRTMAX`.
 
 Use pkill to send signals:

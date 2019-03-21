@@ -8,12 +8,12 @@ import (
 	"io"
 	"log"
 	"os"
-	"os/exec"
 	"runtime/debug"
 	"strings"
 	"sync"
 
 	"github.com/burik666/yagostatus/internal/pkg/config"
+	"github.com/burik666/yagostatus/internal/pkg/executor"
 	_ "github.com/burik666/yagostatus/widgets"
 	"github.com/burik666/yagostatus/ygs"
 
@@ -25,6 +25,7 @@ type YaGoStatus struct {
 	widgets       []ygs.Widget
 	widgetsOutput [][]ygs.I3BarBlock
 	widgetsConfig []config.WidgetConfig
+	widgetChans   []chan []ygs.I3BarBlock
 
 	upd chan int
 
@@ -92,9 +93,12 @@ func (status *YaGoStatus) processWidgetEvents(widgetIndex int, outputIndex int, 
 			(widgetEvent.Name == "" || widgetEvent.Name == event.Name) &&
 			(widgetEvent.Instance == "" || widgetEvent.Instance == event.Instance) &&
 			checkModifiers(widgetEvent.Modifiers, event.Modifiers) {
-			cmd := exec.Command("sh", "-c", widgetEvent.Command)
-			cmd.Stderr = os.Stderr
-			cmd.Env = append(os.Environ(),
+
+			exc, err := executor.Exec("sh", "-c", widgetEvent.Command)
+			if err != nil {
+				return err
+			}
+			exc.AddEnv(
 				fmt.Sprintf("I3_%s=%s", "NAME", event.Name),
 				fmt.Sprintf("I3_%s=%s", "INSTANCE", event.Instance),
 				fmt.Sprintf("I3_%s=%d", "BUTTON", event.Button),
@@ -106,30 +110,18 @@ func (status *YaGoStatus) processWidgetEvents(widgetIndex int, outputIndex int, 
 				fmt.Sprintf("I3_%s=%d", "HEIGHT", event.Height),
 				fmt.Sprintf("I3_%s=%s", "MODIFIERS", strings.Join(event.Modifiers, ",")),
 			)
-			cmdStdin, err := cmd.StdinPipe()
+			stdin, err := exc.Stdin()
 			if err != nil {
 				return err
 			}
 			eventJSON, _ := json.Marshal(event)
-			cmdStdin.Write(eventJSON)
-			cmdStdin.Write([]byte("\n"))
-			cmdStdin.Close()
+			stdin.Write(eventJSON)
+			stdin.Write([]byte("\n"))
+			stdin.Close()
 
-			cmdOutput, err := cmd.Output()
+			err = exc.Run(status.widgetChans[widgetIndex], widgetEvent.OutputFormat)
 			if err != nil {
 				return err
-			}
-
-			if widgetEvent.Output {
-				var blocks []ygs.I3BarBlock
-				if err := json.Unmarshal(cmdOutput, &blocks); err != nil {
-					blocks = append(blocks,
-						ygs.I3BarBlock{
-							FullText: strings.Trim(string(cmdOutput), "\n\r"),
-						},
-					)
-				}
-				status.addWidgetOutput(widgetIndex, blocks)
 			}
 		}
 	}
@@ -206,6 +198,7 @@ func (status *YaGoStatus) Run() {
 	})()
 	for widgetIndex, widget := range status.widgets {
 		c := make(chan []ygs.I3BarBlock)
+		status.widgetChans = append(status.widgetChans, c)
 		go func(widgetIndex int, c chan []ygs.I3BarBlock) {
 			for {
 				select {

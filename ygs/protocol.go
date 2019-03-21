@@ -51,22 +51,39 @@ type I3BarClickEvent struct {
 
 // UnmarshalJSON unmarshals json with custom keys (with _ prefix).
 func (b *I3BarBlock) UnmarshalJSON(data []byte) error {
-	type dataWrapped I3BarBlock
+	var resmap map[string]interface{}
 
+	if err := json.Unmarshal(data, &resmap); err != nil {
+		return err
+	}
+
+	type dataWrapped I3BarBlock
 	wr := dataWrapped(*b)
 
-	if err := json.Unmarshal(data, &wr); err != nil {
-		return err
-	}
-
-	if err := json.Unmarshal(data, &wr.Custom); err != nil {
-		return err
-	}
-
-	for k := range wr.Custom {
-		if k[0] != '_' {
-			delete(wr.Custom, k)
+	for k, v := range resmap {
+		if len(k) == 0 {
+			delete(resmap, k)
+			continue
 		}
+
+		if k[0] == '_' {
+			if wr.Custom == nil {
+				wr.Custom = make(map[string]interface{})
+			}
+			wr.Custom[k] = v
+			delete(resmap, k)
+		}
+	}
+
+	buf := &bytes.Buffer{}
+
+	enc := json.NewEncoder(buf)
+	enc.Encode(resmap)
+
+	decoder := json.NewDecoder(buf)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&wr); err != nil {
+		return err
 	}
 
 	*b = I3BarBlock(wr)

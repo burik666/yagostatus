@@ -1,16 +1,14 @@
 package widgets
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
+	"github.com/burik666/yagostatus/internal/pkg/executor"
 	"github.com/burik666/yagostatus/internal/pkg/signals"
 	"github.com/burik666/yagostatus/ygs"
 )
@@ -21,6 +19,7 @@ type ExecWidgetParams struct {
 	Interval     uint
 	EventsUpdate bool `yaml:"events_update"`
 	Signal       *int
+	OutputFormat executor.OutputFormat `yaml:"output_format"`
 }
 
 // ExecWidget implements the exec widget.
@@ -57,21 +56,11 @@ func NewExecWidget(params interface{}) (ygs.Widget, error) {
 }
 
 func (w *ExecWidget) exec() error {
-	cmd := exec.Command("sh", "-c", w.params.Command)
-	cmd.Stderr = os.Stderr
-	output, err := cmd.Output()
+	exc, err := executor.Exec("sh", "-c", w.params.Command)
 	if err != nil {
 		return err
 	}
-
-	var blocks []ygs.I3BarBlock
-	err = json.Unmarshal(output, &blocks)
-	if err != nil {
-		blocks = append(blocks, ygs.I3BarBlock{FullText: strings.Trim(string(output), "\n ")})
-	}
-	w.c <- blocks
-	return nil
-
+	return exc.Run(w.c, w.params.OutputFormat)
 }
 
 // Run starts the main loop.
