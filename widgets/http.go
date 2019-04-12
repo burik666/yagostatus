@@ -94,7 +94,7 @@ func (w *HTTPWidget) Run(c chan<- []ygs.I3BarBlock) error {
 }
 
 // Event processes the widget events.
-func (w *HTTPWidget) Event(event ygs.I3BarClickEvent) {
+func (w *HTTPWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock) {
 	if w.conn != nil {
 		websocket.JSON.Send(w.conn, event)
 	}

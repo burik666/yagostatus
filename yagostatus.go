@@ -85,7 +85,7 @@ func (status *YaGoStatus) processWidgetEvents(widgetIndex int, outputIndex int, 
 				}}
 			}
 		})()
-		status.widgets[widgetIndex].Event(event)
+		status.widgets[widgetIndex].Event(event, status.widgetsOutput[widgetIndex])
 	})()
 
 	for _, widgetEvent := range status.widgetsConfig[widgetIndex].Events {

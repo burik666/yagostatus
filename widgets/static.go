@@ -47,7 +47,7 @@ func (w *StaticWidget) Run(c chan<- []ygs.I3BarBlock) error {
 }
 
 // Event processes the widget events.
-func (w *StaticWidget) Event(event ygs.I3BarClickEvent) {}
+func (w *StaticWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock) {}
 
 // Stop shutdowns the widget.
 func (w *StaticWidget) Stop() {}

@@ -50,7 +50,7 @@ func (w *ClockWidget) Run(c chan<- []ygs.I3BarBlock) error {
 }
 
 // Event processes the widget events.
-func (w *ClockWidget) Event(event ygs.I3BarClickEvent) {}
+func (w *ClockWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock) {}
 
 // Stop shutdowns the widget.
 func (w *ClockWidget) Stop() {}

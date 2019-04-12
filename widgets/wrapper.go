@@ -57,7 +57,7 @@ func (w *WrapperWidget) Run(c chan<- []ygs.I3BarBlock) error {
 }
 
 // Event processes the widget events.
-func (w *WrapperWidget) Event(event ygs.I3BarClickEvent) {
+func (w *WrapperWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock) {
 	if w.stdin != nil {
 		msg, _ := json.Marshal(event)
 		w.stdin.Write(msg)

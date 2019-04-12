@@ -107,7 +107,7 @@ func (w *ExecWidget) Run(c chan<- []ygs.I3BarBlock) error {
 }
 
 // Event processes the widget events.
-func (w *ExecWidget) Event(event ygs.I3BarClickEvent) {
+func (w *ExecWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock) {
 	if w.params.EventsUpdate {
 		w.upd <- struct{}{}
 	}
