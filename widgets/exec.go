@@ -1,10 +1,12 @@
 package widgets
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -26,9 +28,10 @@ type ExecWidgetParams struct {
 type ExecWidget struct {
 	params ExecWidgetParams
 
-	signal os.Signal
-	c      chan<- []ygs.I3BarBlock
-	upd    chan struct{}
+	signal       os.Signal
+	c            chan<- []ygs.I3BarBlock
+	upd          chan struct{}
+	customfields map[string]interface{}
 }
 
 func init() {
@@ -60,7 +63,29 @@ func (w *ExecWidget) exec() error {
 	if err != nil {
 		return err
 	}
-	return exc.Run(w.c, w.params.OutputFormat)
+
+	for k, v := range w.customfields {
+		vst, _ := json.Marshal(v)
+		exc.AddEnv(
+			fmt.Sprintf("I3_%s=%s", strings.ToUpper(k), vst),
+		)
+
+	}
+
+	c := make(chan []ygs.I3BarBlock)
+	go (func() {
+		for {
+			blocks, ok := <-c
+			if !ok {
+				break
+			}
+			w.c <- blocks
+			w.setCustomFields(blocks)
+		}
+	})()
+	err = exc.Run(c, w.params.OutputFormat)
+	close(c)
+	return err
 }
 
 // Run starts the main loop.
@@ -95,7 +120,7 @@ func (w *ExecWidget) Run(c chan<- []ygs.I3BarBlock) error {
 	for ; true; <-w.upd {
 		err := w.exec()
 		if err != nil {
-			w.c <- []ygs.I3BarBlock{
+			c <- []ygs.I3BarBlock{
 				ygs.I3BarBlock{
 					FullText: err.Error(),
 					Color:    "#ff0000",
@@ -108,6 +133,7 @@ func (w *ExecWidget) Run(c chan<- []ygs.I3BarBlock) error {
 
 // Event processes the widget events.
 func (w *ExecWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock) {
+	w.setCustomFields(blocks)
 	if w.params.EventsUpdate {
 		w.upd <- struct{}{}
 	}
@@ -115,3 +141,13 @@ func (w *ExecWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock) {
 
 // Stop shutdowns the widget.
 func (w *ExecWidget) Stop() {}
+
+func (w *ExecWidget) setCustomFields(blocks []ygs.I3BarBlock) {
+	customfields := make(map[string]interface{})
+	for _, block := range blocks {
+		for k, v := range block.Custom {
+			customfields[k] = v
+		}
+	}
+	w.customfields = customfields
+}

@@ -101,7 +101,7 @@ Example:
     * `modifiers` - List of X11 modifiers condition.
     * `command` - Command to execute (via `sh -c`).
     Сlick_event json will be written to stdin.
-    Also env variables are available: `$I3_NAME`, `$I3_INSTANCE`, `$I3_BUTTON`, `$I3_MODIFIERS`, `$I3_X`, `$I3_Y`, `$I3_RELATIVE_X`, `$I3_RELATIVE_Y`, `$I3_WIDTH`, `$I3_HEIGHT`, `$I3_MODIFIERS`.
+    Also env variables are available: `$I3_NAME`, `$I3_INSTANCE`, `$I3_BUTTON`, `$I3_MODIFIERS`, `$I3_X`, `$I3_Y`, `$I3_RELATIVE_X`, `$I3_RELATIVE_Y`, `$I3_WIDTH`, `$I3_HEIGHT`, `$I3_MODIFIERS`. `$I3__` prefix for custom fields.
     * `output_format` - The command output format (none, text, json, auto) (default: `none`).
     * `name` - Filter by `name` for widgets with multiple blocks (default: empty).
     * `instance` - Filter by `instance` for widgets with multiple blocks (default: empty).
@@ -160,6 +160,8 @@ This widget runs the command at the specified interval.
 - `output_format` - The command output format (none, text, json, auto) (default: `auto`).
 - `signal` - SIGRTMIN offset to update widget. Should be between 0 and `SIGRTMIN`-`SIGRTMAX`.
 
+Custom fields are available as ENV variables with the prefix `$I3__`.
+
 Use pkill to send signals:
 
     pkill -SIGRTMIN+1 yagostatus
@@ -198,6 +200,37 @@ Send an empty array to clear:
 
 
 ## Examples
+
+### Counter
+
+This example shows how you can use custom fields.
+
+- Left mouse button - increment
+- Right mouse button - decrement
+- Middle mouse button - reset
+
+```yml
+  - widget: static
+    blocks: >
+        [
+            {
+                "full_text":"COUNTER"
+            }
+        ]
+    events:
+      - command: |
+          printf '[{"full_text":"Counter: %d", "_count":%d}]' $((I3__COUNT + 1)) $((I3__COUNT + 1))
+        output_format: json
+        button: 1
+      - command: |
+          printf '[{"full_text":"Counter: %d", "_count":%d}]' $((I3__COUNT - 1)) $((I3__COUNT - 1))
+        output_format: json
+        button: 3
+      - command: |
+          printf '[{"full_text":"Counter: 0", "_count":0}]'
+        output_format: json
+        button: 2
+```
 
 ### Volume control
 i3 config:

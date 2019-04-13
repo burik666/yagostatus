@@ -74,17 +74,15 @@ func (status *YaGoStatus) AddWidget(widget ygs.Widget, config config.WidgetConfi
 }
 
 func (status *YaGoStatus) processWidgetEvents(widgetIndex int, outputIndex int, event ygs.I3BarClickEvent) error {
-	(func() {
-		defer (func() {
-			if r := recover(); r != nil {
-				log.Printf("Widget event is panicking: %s", r)
-				debug.PrintStack()
-				status.widgetsOutput[widgetIndex] = []ygs.I3BarBlock{ygs.I3BarBlock{
-					FullText: "Widget event is panicking",
-					Color:    "#ff0000",
-				}}
-			}
-		})()
+	defer (func() {
+		if r := recover(); r != nil {
+			log.Printf("Widget event is panicking: %s", r)
+			debug.PrintStack()
+			status.widgetsOutput[widgetIndex] = []ygs.I3BarBlock{ygs.I3BarBlock{
+				FullText: "Widget event is panicking",
+				Color:    "#ff0000",
+			}}
+		}
 		status.widgets[widgetIndex].Event(event, status.widgetsOutput[widgetIndex])
 	})()
 
@@ -110,6 +108,12 @@ func (status *YaGoStatus) processWidgetEvents(widgetIndex int, outputIndex int, 
 				fmt.Sprintf("I3_%s=%d", "HEIGHT", event.Height),
 				fmt.Sprintf("I3_%s=%s", "MODIFIERS", strings.Join(event.Modifiers, ",")),
 			)
+			for k, v := range status.widgetsOutput[widgetIndex][outputIndex].Custom {
+				vst, _ := json.Marshal(v)
+				exc.AddEnv(
+					fmt.Sprintf("I3_%s=%s", strings.ToUpper(k), vst),
+				)
+			}
 			stdin, err := exc.Stdin()
 			if err != nil {
 				return err
