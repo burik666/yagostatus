@@ -82,14 +82,28 @@ func main() {
 		yaGoStatus.errorWidget(cfgError.Error())
 	}
 
-	stopsignals := make(chan os.Signal, 1)
-	signal.Notify(stopsignals, syscall.SIGINT, syscall.SIGTERM)
+	stopContSignals := make(chan os.Signal, 1)
+	signal.Notify(stopContSignals, cfg.Signals.StopSignal, cfg.Signals.ContSignal)
+	go func() {
+		for {
+			sig := <-stopContSignals
+			switch sig {
+			case cfg.Signals.StopSignal:
+				yaGoStatus.Stop()
+			case cfg.Signals.ContSignal:
+				yaGoStatus.Continue()
+			}
+		}
+	}()
+
+	shutdownsignals := make(chan os.Signal, 1)
+	signal.Notify(shutdownsignals, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
 	go func() {
 		yaGoStatus.Run()
-		stopsignals <- syscall.SIGTERM
+		shutdownsignals <- syscall.SIGTERM
 	}()
 
-	<-stopsignals
-	yaGoStatus.Stop()
+	<-shutdownsignals
+	yaGoStatus.Shutdown()
 }

@@ -32,6 +32,7 @@ type ExecWidget struct {
 	c            chan<- []ygs.I3BarBlock
 	upd          chan struct{}
 	customfields map[string]interface{}
+	ticker       *time.Ticker
 }
 
 func init() {
@@ -46,6 +47,10 @@ func NewExecWidget(params interface{}) (ygs.Widget, error) {
 
 	if len(w.params.Command) == 0 {
 		return nil, errors.New("missing 'command' setting")
+	}
+
+	if w.params.Interval > 0 {
+		w.ticker = time.NewTicker(time.Duration(w.params.Interval) * time.Second)
 	}
 
 	if w.params.Signal != nil {
@@ -107,11 +112,11 @@ func (w *ExecWidget) Run(c chan<- []ygs.I3BarBlock) error {
 			}
 		})()
 	}
-	if w.params.Interval > 0 {
-		ticker := time.NewTicker(time.Duration(w.params.Interval) * time.Second)
+
+	if w.ticker != nil {
 		go (func() {
 			for {
-				<-ticker.C
+				<-w.ticker.C
 				w.upd <- struct{}{}
 			}
 		})()
@@ -139,8 +144,14 @@ func (w *ExecWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock) {
 	}
 }
 
-// Stop shutdowns the widget.
+// Stop stops the widdget.
 func (w *ExecWidget) Stop() {}
+
+// Continue continues the widdget.
+func (w *ExecWidget) Continue() {}
+
+// Shutdown shutdowns the widget.
+func (w *ExecWidget) Shutdown() {}
 
 func (w *ExecWidget) setCustomFields(blocks []ygs.I3BarBlock) {
 	customfields := make(map[string]interface{})

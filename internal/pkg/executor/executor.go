@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+	"syscall"
 
 	"github.com/burik666/yagostatus/ygs"
 )
@@ -23,7 +24,8 @@ const (
 )
 
 type Executor struct {
-	cmd *exec.Cmd
+	cmd    *exec.Cmd
+	header *ygs.I3BarHeader
 }
 
 func Exec(command string, args ...string) (*Executor, error) {
@@ -37,6 +39,10 @@ func Exec(command string, args ...string) (*Executor, error) {
 	e.cmd = exec.Command(name, args...)
 	e.cmd.Stderr = os.Stderr
 	e.cmd.Env = os.Environ()
+	e.cmd.SysProcAttr = &syscall.SysProcAttr{
+		Setpgid: true,
+		Pgid:    0,
+	}
 
 	return e, nil
 }
@@ -98,6 +104,7 @@ func (e *Executor) Run(c chan<- []ygs.I3BarBlock, format OutputFormat) error {
 
 	var header ygs.I3BarHeader
 	if err := headerDecoder.Decode(&header); err == nil {
+		e.header = &header
 		decoder.Token()
 	} else {
 		var blocks []ygs.I3BarBlock
@@ -109,10 +116,10 @@ func (e *Executor) Run(c chan<- []ygs.I3BarBlock, format OutputFormat) error {
 	for {
 		var blocks []ygs.I3BarBlock
 		if err := decoder.Decode(&blocks); err != nil {
-			if err != io.EOF {
-				return err
+			if err == io.EOF {
+				return nil
 			}
-			return nil
+			return err
 		}
 		c <- blocks
 	}
@@ -139,6 +146,14 @@ func (e *Executor) Signal(sig os.Signal) error {
 		return e.cmd.Process.Signal(sig)
 	}
 	return nil
+}
+
+func (e *Executor) ProcessState() *os.ProcessState {
+	return e.cmd.ProcessState
+}
+
+func (e *Executor) I3BarHeader() *ygs.I3BarHeader {
+	return e.header
 }
 
 type bufferCloser struct {

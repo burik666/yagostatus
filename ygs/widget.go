@@ -6,4 +6,6 @@ type Widget interface {
 	Run(chan<- []I3BarBlock) error
 	Event(I3BarClickEvent, []I3BarBlock)
 	Stop()
+	Continue()
+	Shutdown()
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -31,11 +30,13 @@ type YaGoStatus struct {
 
 	workspaces        []i3.Workspace
 	visibleWorkspaces []string
+
+	cfg config.Config
 }
 
 // NewYaGoStatus returns a new YaGoStatus instance.
 func NewYaGoStatus(cfg config.Config) (*YaGoStatus, error) {
-	status := &YaGoStatus{}
+	status := &YaGoStatus{cfg: cfg}
 	for _, w := range cfg.Widgets {
 		(func() {
 			defer (func() {
@@ -188,8 +189,8 @@ func (status *YaGoStatus) eventReader() {
 // Run starts the main loop.
 func (status *YaGoStatus) Run() {
 	status.upd = make(chan int)
-	status.updateWorkspaces()
 	go (func() {
+		status.updateWorkspaces()
 		recv := i3.Subscribe(i3.WorkspaceEventType)
 		for recv.Next() {
 			e := recv.Event().(*i3.WorkspaceEvent)
@@ -233,12 +234,18 @@ func (status *YaGoStatus) Run() {
 		}(widget, c)
 	}
 
-	fmt.Print("{\"version\":1, \"click_events\": true}\n[\n[]")
+	encoder := json.NewEncoder(os.Stdout)
+	encoder.SetEscapeHTML(false)
+	encoder.SetIndent("", "  ")
+
+	encoder.Encode(ygs.I3BarHeader{
+		Version:     1,
+		ClickEvents: true,
+		StopSignal:  int(status.cfg.Signals.StopSignal),
+		ContSignal:  int(status.cfg.Signals.ContSignal),
+	})
+	fmt.Print("\n[\n[]")
 	go func() {
-		buf := &bytes.Buffer{}
-		encoder := json.NewEncoder(buf)
-		encoder.SetEscapeHTML(false)
-		encoder.SetIndent("", "  ")
 		for {
 			select {
 			case <-status.upd:
@@ -248,18 +255,16 @@ func (status *YaGoStatus) Run() {
 						result = append(result, widgetOutput...)
 					}
 				}
-				buf.Reset()
-				encoder.Encode(result)
 				fmt.Print(",")
-				fmt.Print(string(buf.Bytes()))
+				encoder.Encode(result)
 			}
 		}
 	}()
 	status.eventReader()
 }
 
-// Stop shutdowns widgets and main loop.
-func (status *YaGoStatus) Stop() {
+// Shutdown shutdowns widgets and main loop.
+func (status *YaGoStatus) Shutdown() {
 	var wg sync.WaitGroup
 	for _, widget := range status.widgets {
 		wg.Add(1)
@@ -271,10 +276,40 @@ func (status *YaGoStatus) Stop() {
 					debug.PrintStack()
 				}
 			})()
-			widget.Stop()
+			widget.Shutdown()
 		}(widget)
 	}
 	wg.Wait()
+}
+
+// Stop stops widgets and main loop.
+func (status *YaGoStatus) Stop() {
+	for _, widget := range status.widgets {
+		go func(widget ygs.Widget) {
+			defer (func() {
+				if r := recover(); r != nil {
+					log.Printf("Widget is panicking: %s", r)
+					debug.PrintStack()
+				}
+			})()
+			widget.Stop()
+		}(widget)
+	}
+}
+
+// Continue continues widgets and main loop.
+func (status *YaGoStatus) Continue() {
+	for _, widget := range status.widgets {
+		go func(widget ygs.Widget) {
+			defer (func() {
+				if r := recover(); r != nil {
+					log.Printf("Widget is panicking: %s", r)
+					debug.PrintStack()
+				}
+			})()
+			widget.Continue()
+		}(widget)
+	}
 }
 
 func (status *YaGoStatus) updateWorkspaces() {

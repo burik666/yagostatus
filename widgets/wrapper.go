@@ -3,6 +3,7 @@ package widgets
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"syscall"
 
@@ -37,23 +38,35 @@ func NewWrapperWidget(params interface{}) (ygs.Widget, error) {
 		return nil, errors.New("missing 'command' setting")
 	}
 
+	var err error
+	w.exc, err = executor.Exec(w.params.Command)
+	if err != nil {
+		return nil, err
+	}
+
 	return w, nil
 }
 
 // Run starts the main loop.
 func (w *WrapperWidget) Run(c chan<- []ygs.I3BarBlock) error {
 	var err error
-	w.exc, err = executor.Exec(w.params.Command)
-	if err != nil {
-		return nil
-	}
+
 	w.stdin, err = w.exc.Stdin()
 	if err != nil {
-		return nil
+		return err
 	}
+
 	defer w.stdin.Close()
+
 	w.stdin.Write([]byte("["))
-	return w.exc.Run(c, executor.OutputFormatJSON)
+	err = w.exc.Run(c, executor.OutputFormatJSON)
+	if err == nil {
+		err = errors.New("process exited unexpectedly")
+		if state := w.exc.ProcessState(); state != nil {
+			return fmt.Errorf("%w: %s", err, state.String())
+		}
+	}
+	return err
 }
 
 // Event processes the widget events.
@@ -65,10 +78,32 @@ func (w *WrapperWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock
 	}
 }
 
-// Stop shutdowns the widget.
+// Stop stops the widdget.
 func (w *WrapperWidget) Stop() {
+	if header := w.exc.I3BarHeader(); header != nil {
+		if header.StopSignal != 0 {
+			w.exc.Signal(syscall.Signal(header.StopSignal))
+			return
+		}
+	}
+	w.exc.Signal(syscall.SIGSTOP)
+}
+
+// Continue continues the widdget.
+func (w *WrapperWidget) Continue() {
+	if header := w.exc.I3BarHeader(); header != nil {
+		if header.ContSignal != 0 {
+			w.exc.Signal(syscall.Signal(header.ContSignal))
+			return
+		}
+	}
+	w.exc.Signal(syscall.SIGCONT)
+}
+
+// Shutdown shutdowns the widget.
+func (w *WrapperWidget) Shutdown() {
 	if w.exc != nil {
-		w.exc.Signal(syscall.SIGHUP)
+		w.exc.Signal(syscall.SIGTERM)
 		w.exc.Wait()
 	}
 }

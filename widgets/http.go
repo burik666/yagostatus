@@ -149,5 +149,11 @@ func (w *HTTPWidget) wsHandler(ws *websocket.Conn) {
 	ws.Close()
 }
 
-// Stop shutdowns the widget.
+// Stop stops the widdget.
 func (w *HTTPWidget) Stop() {}
+
+// Continue continues the widdget.
+func (w *HTTPWidget) Continue() {}
+
+// Shutdown shutdowns the widget.
+func (w *HTTPWidget) Shutdown() {}

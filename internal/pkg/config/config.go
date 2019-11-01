@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
+	"syscall"
 
 	"github.com/burik666/yagostatus/internal/pkg/executor"
 	"github.com/burik666/yagostatus/ygs"
@@ -15,6 +16,10 @@ import (
 
 // Config represents the main configuration.
 type Config struct {
+	Signals struct {
+		StopSignal syscall.Signal `yaml:"stop"`
+		ContSignal syscall.Signal `yaml:"cont"`
+	} `yaml:"signals"`
 	Widgets []WidgetConfig `yaml:"widgets"`
 }
 
@@ -89,6 +94,9 @@ func Parse(data []byte) (*Config, error) {
 	}
 
 	config := Config{}
+	config.Signals.StopSignal = syscall.SIGUSR1
+	config.Signals.ContSignal = syscall.SIGCONT
+
 	if err := yaml.Unmarshal(data, &config); err != nil {
 		return nil, trimYamlErr(err, false)
 	}

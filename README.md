@@ -29,7 +29,7 @@ Replace `status_command` to `~/go/bin/yagostatus --config ~/.config/i3/yagostatu
 ### Troubleshooting
 Yagostatus outputs error messages in stderr, you can log them by redirecting stderr to a file.
 
-`status_command ~/go/bin/yagostatus --config ~/.config/i3/yagostatus.yml 2> /tmp/yagostatus.log`
+`status_command exec ~/go/bin/yagostatus --config ~/.config/i3/yagostatus.yml 2> /tmp/yagostatus.log`
 
 ## Configuration
 
