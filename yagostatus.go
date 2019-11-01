@@ -84,7 +84,9 @@ func (status *YaGoStatus) processWidgetEvents(widgetIndex int, outputIndex int, 
 				Color:    "#ff0000",
 			}}
 		}
-		status.widgets[widgetIndex].Event(event, status.widgetsOutput[widgetIndex])
+		if err := status.widgets[widgetIndex].Event(event, status.widgetsOutput[widgetIndex]); err != nil {
+			log.Printf("Failed to process widget event: %s", err)
+		}
 	})()
 
 	for _, widgetEvent := range status.widgetsConfig[widgetIndex].Events {
@@ -145,13 +147,13 @@ func (status *YaGoStatus) addWidgetOutput(widgetIndex int, blocks []ygs.I3BarBlo
 	status.upd <- widgetIndex
 }
 
-func (status *YaGoStatus) eventReader() {
+func (status *YaGoStatus) eventReader() error {
 	reader := bufio.NewReader(os.Stdin)
 	for {
 		line, err := reader.ReadString('\n')
 		if err != nil {
 			if err != io.EOF {
-				log.Fatal(err)
+				return err
 			}
 			break
 		}
@@ -184,10 +186,11 @@ func (status *YaGoStatus) eventReader() {
 			}
 		}
 	}
+	return nil
 }
 
 // Run starts the main loop.
-func (status *YaGoStatus) Run() {
+func (status *YaGoStatus) Run() error {
 	status.upd = make(chan int)
 	go (func() {
 		status.updateWorkspaces()
@@ -260,11 +263,11 @@ func (status *YaGoStatus) Run() {
 			}
 		}
 	}()
-	status.eventReader()
+	return status.eventReader()
 }
 
 // Shutdown shutdowns widgets and main loop.
-func (status *YaGoStatus) Shutdown() {
+func (status *YaGoStatus) Shutdown() error {
 	var wg sync.WaitGroup
 	for _, widget := range status.widgets {
 		wg.Add(1)
@@ -276,10 +279,13 @@ func (status *YaGoStatus) Shutdown() {
 					debug.PrintStack()
 				}
 			})()
-			widget.Shutdown()
+			if err := widget.Shutdown(); err != nil {
+				log.Printf("Failed to shutdown widget: %s", err)
+			}
 		}(widget)
 	}
 	wg.Wait()
+	return nil
 }
 
 // Stop stops widgets and main loop.
@@ -292,7 +298,9 @@ func (status *YaGoStatus) Stop() {
 					debug.PrintStack()
 				}
 			})()
-			widget.Stop()
+			if err := widget.Stop(); err != nil {
+				log.Printf("Failed to stop widget: %s", err)
+			}
 		}(widget)
 	}
 }
@@ -307,7 +315,9 @@ func (status *YaGoStatus) Continue() {
 					debug.PrintStack()
 				}
 			})()
-			widget.Continue()
+			if err := widget.Continue(); err != nil {
+				log.Printf("Failed to continue widget: %s", err)
+			}
 		}(widget)
 	}
 }

@@ -14,6 +14,8 @@ type StaticWidgetParams struct {
 
 // StaticWidget implements a static widget.
 type StaticWidget struct {
+	BlankWidget
+
 	params StaticWidgetParams
 
 	blocks []ygs.I3BarBlock
@@ -45,15 +47,3 @@ func (w *StaticWidget) Run(c chan<- []ygs.I3BarBlock) error {
 	c <- w.blocks
 	return nil
 }
-
-// Event processes the widget events.
-func (w *StaticWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock) {}
-
-// Stop stops the widdget.
-func (w *StaticWidget) Stop() {}
-
-// Continue continues the widdget.
-func (w *StaticWidget) Continue() {}
-
-// Shutdown shutdowns the widget.
-func (w *StaticWidget) Shutdown() {}

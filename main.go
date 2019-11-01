@@ -100,10 +100,14 @@ func main() {
 	signal.Notify(shutdownsignals, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
 	go func() {
-		yaGoStatus.Run()
+		if err := yaGoStatus.Run(); err != nil {
+			log.Printf("Failed to run yagostatus: %s", err)
+		}
 		shutdownsignals <- syscall.SIGTERM
 	}()
 
 	<-shutdownsignals
-	yaGoStatus.Shutdown()
+	if err := yaGoStatus.Shutdown(); err != nil {
+		log.Printf("Failed to shutdown yagostatus: %s", err)
+	}
 }

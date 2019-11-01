@@ -26,13 +26,21 @@ func (w *BlankWidget) Run(c chan<- []ygs.I3BarBlock) error {
 }
 
 // Event processes the widget events.
-func (w *BlankWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock) {}
+func (w *BlankWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock) error {
+	return nil
+}
 
 // Stop stops the widdget.
-func (w *BlankWidget) Stop() {}
+func (w *BlankWidget) Stop() error {
+	return nil
+}
 
 // Continue continues the widdget.
-func (w *BlankWidget) Continue() {}
+func (w *BlankWidget) Continue() error {
+	return nil
+}
 
 // Shutdown shutdowns the widget.
-func (w *BlankWidget) Shutdown() {}
+func (w *BlankWidget) Shutdown() error {
+	return nil
+}

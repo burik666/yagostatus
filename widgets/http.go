@@ -22,6 +22,8 @@ type HTTPWidgetParams struct {
 
 // HTTPWidget implements the http server widget.
 type HTTPWidget struct {
+	BlankWidget
+
 	params HTTPWidgetParams
 
 	httpServer *http.Server
@@ -94,11 +96,11 @@ func (w *HTTPWidget) Run(c chan<- []ygs.I3BarBlock) error {
 }
 
 // Event processes the widget events.
-func (w *HTTPWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock) {
+func (w *HTTPWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock) error {
 	if w.conn != nil {
-		websocket.JSON.Send(w.conn, event)
+		return websocket.JSON.Send(w.conn, event)
 	}
-
+	return nil
 }
 
 func (w *HTTPWidget) httpHandler(response http.ResponseWriter, request *http.Request) {
@@ -148,12 +150,3 @@ func (w *HTTPWidget) wsHandler(ws *websocket.Conn) {
 	}
 	ws.Close()
 }
-
-// Stop stops the widdget.
-func (w *HTTPWidget) Stop() {}
-
-// Continue continues the widdget.
-func (w *HTTPWidget) Continue() {}
-
-// Shutdown shutdowns the widget.
-func (w *HTTPWidget) Shutdown() {}

@@ -71,9 +71,9 @@ func (w *WrapperWidget) Run(c chan<- []ygs.I3BarBlock) error {
 }
 
 // Event processes the widget events.
-func (w *WrapperWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock) {
+func (w *WrapperWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock) error {
 	if w.stdin == nil {
-		return
+		return nil
 	}
 
 	if header := w.exc.I3BarHeader(); header != nil && header.ClickEvents {
@@ -85,34 +85,37 @@ func (w *WrapperWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock
 		w.stdin.Write(msg)
 		w.stdin.Write([]byte(",\n"))
 	}
+	return nil
 }
 
 // Stop stops the widdget.
-func (w *WrapperWidget) Stop() {
+func (w *WrapperWidget) Stop() error {
 	if header := w.exc.I3BarHeader(); header != nil {
 		if header.StopSignal != 0 {
-			w.exc.Signal(syscall.Signal(header.StopSignal))
-			return
+			return w.exc.Signal(syscall.Signal(header.StopSignal))
 		}
 	}
-	w.exc.Signal(syscall.SIGSTOP)
+	return w.exc.Signal(syscall.SIGSTOP)
 }
 
 // Continue continues the widdget.
-func (w *WrapperWidget) Continue() {
+func (w *WrapperWidget) Continue() error {
 	if header := w.exc.I3BarHeader(); header != nil {
 		if header.ContSignal != 0 {
-			w.exc.Signal(syscall.Signal(header.ContSignal))
-			return
+			return w.exc.Signal(syscall.Signal(header.ContSignal))
 		}
 	}
-	w.exc.Signal(syscall.SIGCONT)
+	return w.exc.Signal(syscall.SIGCONT)
 }
 
 // Shutdown shutdowns the widget.
-func (w *WrapperWidget) Shutdown() {
+func (w *WrapperWidget) Shutdown() error {
 	if w.exc != nil {
-		w.exc.Signal(syscall.SIGTERM)
-		w.exc.Wait()
+		err := w.exc.Signal(syscall.SIGTERM)
+		if err != nil {
+			return err
+		}
+		return w.exc.Wait()
 	}
+	return nil
 }

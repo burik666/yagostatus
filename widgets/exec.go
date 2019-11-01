@@ -26,6 +26,8 @@ type ExecWidgetParams struct {
 
 // ExecWidget implements the exec widget.
 type ExecWidget struct {
+	BlankWidget
+
 	params ExecWidgetParams
 
 	signal       os.Signal
@@ -137,21 +139,13 @@ func (w *ExecWidget) Run(c chan<- []ygs.I3BarBlock) error {
 }
 
 // Event processes the widget events.
-func (w *ExecWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock) {
+func (w *ExecWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock) error {
 	w.setCustomFields(blocks)
 	if w.params.EventsUpdate {
 		w.upd <- struct{}{}
 	}
+	return nil
 }
-
-// Stop stops the widdget.
-func (w *ExecWidget) Stop() {}
-
-// Continue continues the widdget.
-func (w *ExecWidget) Continue() {}
-
-// Shutdown shutdowns the widget.
-func (w *ExecWidget) Shutdown() {}
 
 func (w *ExecWidget) setCustomFields(blocks []ygs.I3BarBlock) {
 	customfields := make(map[string]interface{})

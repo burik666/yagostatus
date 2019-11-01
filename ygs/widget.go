@@ -4,8 +4,8 @@ package ygs
 // Widget represents a widget struct.
 type Widget interface {
 	Run(chan<- []I3BarBlock) error
-	Event(I3BarClickEvent, []I3BarBlock)
-	Stop()
-	Continue()
-	Shutdown()
+	Event(I3BarClickEvent, []I3BarBlock) error
+	Stop() error
+	Continue() error
+	Shutdown() error
 }

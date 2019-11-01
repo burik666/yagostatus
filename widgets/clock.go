@@ -14,6 +14,8 @@ type ClockWidgetParams struct {
 
 // ClockWidget implements a clock.
 type ClockWidget struct {
+	BlankWidget
+
 	params ClockWidgetParams
 }
 
@@ -48,15 +50,3 @@ func (w *ClockWidget) Run(c chan<- []ygs.I3BarBlock) error {
 		}
 	}
 }
-
-// Event processes the widget events.
-func (w *ClockWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock) {}
-
-// Stop stops the widdget.
-func (w *ClockWidget) Stop() {}
-
-// Continue continues the widdget.
-func (w *ClockWidget) Continue() {}
-
-// Shutdown shutdowns the widget.
-func (w *ClockWidget) Shutdown() {}
