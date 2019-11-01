@@ -22,6 +22,8 @@ type WrapperWidget struct {
 
 	exc   *executor.Executor
 	stdin io.WriteCloser
+
+	eventBracketWritten bool
 }
 
 func init() {
@@ -58,7 +60,6 @@ func (w *WrapperWidget) Run(c chan<- []ygs.I3BarBlock) error {
 
 	defer w.stdin.Close()
 
-	w.stdin.Write([]byte("["))
 	err = w.exc.Run(c, executor.OutputFormatJSON)
 	if err == nil {
 		err = errors.New("process exited unexpectedly")
@@ -71,7 +72,15 @@ func (w *WrapperWidget) Run(c chan<- []ygs.I3BarBlock) error {
 
 // Event processes the widget events.
 func (w *WrapperWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock) {
-	if w.stdin != nil {
+	if w.stdin == nil {
+		return
+	}
+
+	if header := w.exc.I3BarHeader(); header != nil && header.ClickEvents {
+		if !w.eventBracketWritten {
+			w.eventBracketWritten = true
+			w.stdin.Write([]byte("["))
+		}
 		msg, _ := json.Marshal(event)
 		w.stdin.Write(msg)
 		w.stdin.Write([]byte(",\n"))
