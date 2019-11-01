@@ -37,6 +37,7 @@ type YaGoStatus struct {
 // NewYaGoStatus returns a new YaGoStatus instance.
 func NewYaGoStatus(cfg config.Config) (*YaGoStatus, error) {
 	status := &YaGoStatus{cfg: cfg}
+
 	for _, w := range cfg.Widgets {
 		(func() {
 			defer (func() {
@@ -46,12 +47,15 @@ func NewYaGoStatus(cfg config.Config) (*YaGoStatus, error) {
 					status.errorWidget("Widget is panicking")
 				}
 			})()
+
 			widget, err := ygs.NewWidget(w.Name, w.Params)
 			if err != nil {
 				log.Printf("Failed to create widget: %s", err)
 				status.errorWidget(err.Error())
+
 				return
 			}
+
 			status.AddWidget(widget, w)
 		})()
 	}
@@ -64,6 +68,7 @@ func (status *YaGoStatus) errorWidget(text string) {
 	if err != nil {
 		panic(err)
 	}
+
 	status.AddWidget(errWidget, config.WidgetConfig{})
 }
 
@@ -79,11 +84,12 @@ func (status *YaGoStatus) processWidgetEvents(widgetIndex int, outputIndex int, 
 		if r := recover(); r != nil {
 			log.Printf("Widget event is panicking: %s", r)
 			debug.PrintStack()
-			status.widgetsOutput[widgetIndex] = []ygs.I3BarBlock{ygs.I3BarBlock{
+			status.widgetsOutput[widgetIndex] = []ygs.I3BarBlock{{
 				FullText: "Widget event is panicking",
 				Color:    "#ff0000",
 			}}
 		}
+
 		if err := status.widgets[widgetIndex].Event(event, status.widgetsOutput[widgetIndex]); err != nil {
 			log.Printf("Failed to process widget event: %s", err)
 		}
@@ -94,11 +100,11 @@ func (status *YaGoStatus) processWidgetEvents(widgetIndex int, outputIndex int, 
 			(widgetEvent.Name == "" || widgetEvent.Name == event.Name) &&
 			(widgetEvent.Instance == "" || widgetEvent.Instance == event.Instance) &&
 			checkModifiers(widgetEvent.Modifiers, event.Modifiers) {
-
 			exc, err := executor.Exec("sh", "-c", widgetEvent.Command)
 			if err != nil {
 				return err
 			}
+
 			exc.AddEnv(
 				fmt.Sprintf("I3_%s=%s", "NAME", event.Name),
 				fmt.Sprintf("I3_%s=%s", "INSTANCE", event.Instance),
@@ -111,20 +117,35 @@ func (status *YaGoStatus) processWidgetEvents(widgetIndex int, outputIndex int, 
 				fmt.Sprintf("I3_%s=%d", "HEIGHT", event.Height),
 				fmt.Sprintf("I3_%s=%s", "MODIFIERS", strings.Join(event.Modifiers, ",")),
 			)
+
 			for k, v := range status.widgetsOutput[widgetIndex][outputIndex].Custom {
 				vst, _ := json.Marshal(v)
 				exc.AddEnv(
 					fmt.Sprintf("I3_%s=%s", strings.ToUpper(k), vst),
 				)
 			}
+
 			stdin, err := exc.Stdin()
 			if err != nil {
 				return err
 			}
-			eventJSON, _ := json.Marshal(event)
-			stdin.Write(eventJSON)
-			stdin.Write([]byte("\n"))
-			stdin.Close()
+
+			eventJSON, err := json.Marshal(event)
+			if err != nil {
+				return err
+			}
+
+			eventJSON = append(eventJSON, []byte("\n")...)
+
+			_, err = stdin.Write(eventJSON)
+			if err != nil {
+				return err
+			}
+
+			err = stdin.Close()
+			if err != nil {
+				return err
+			}
 
 			err = exc.Run(status.widgetChans[widgetIndex], widgetEvent.OutputFormat)
 			if err != nil {
@@ -132,48 +153,63 @@ func (status *YaGoStatus) processWidgetEvents(widgetIndex int, outputIndex int, 
 			}
 		}
 	}
+
 	return nil
 }
 
 func (status *YaGoStatus) addWidgetOutput(widgetIndex int, blocks []ygs.I3BarBlock) {
 	status.widgetsOutput[widgetIndex] = make([]ygs.I3BarBlock, len(blocks))
+
 	for blockIndex := range blocks {
 		block := blocks[blockIndex]
-		mergeBlocks(&block, status.widgetsConfig[widgetIndex].Template)
+		if err := mergeBlocks(&block, status.widgetsConfig[widgetIndex].Template); err != nil {
+			log.Printf("Failed to merge blocks: %s", err)
+		}
+
 		block.Name = fmt.Sprintf("yagostatus-%d-%s", widgetIndex, block.Name)
 		block.Instance = fmt.Sprintf("yagostatus-%d-%d-%s", widgetIndex, blockIndex, block.Instance)
+
 		status.widgetsOutput[widgetIndex][blockIndex] = block
 	}
+
 	status.upd <- widgetIndex
 }
 
 func (status *YaGoStatus) eventReader() error {
 	reader := bufio.NewReader(os.Stdin)
+
 	for {
 		line, err := reader.ReadString('\n')
 		if err != nil {
 			if err != io.EOF {
 				return err
 			}
+
 			break
 		}
+
 		line = strings.Trim(line, "[], \n")
 		if line == "" {
 			continue
 		}
+
 		var event ygs.I3BarClickEvent
 		if err := json.Unmarshal([]byte(line), &event); err != nil {
 			log.Printf("%s (%s)", err, line)
+
 			continue
 		}
+
 		for widgetIndex, widgetOutputs := range status.widgetsOutput {
 			for outputIndex, output := range widgetOutputs {
 				if (event.Name != "" && event.Name == output.Name) && (event.Instance != "" && event.Instance == output.Instance) {
 					e := event
 					e.Name = strings.Join(strings.Split(e.Name, "-")[2:], "-")
 					e.Instance = strings.Join(strings.Split(e.Instance, "-")[3:], "-")
+
 					if err := status.processWidgetEvents(widgetIndex, outputIndex, e); err != nil {
 						log.Print(err)
+
 						status.widgetsOutput[widgetIndex][outputIndex] = ygs.I3BarBlock{
 							FullText: fmt.Sprintf("Event error: %s", err.Error()),
 							Color:    "#ff0000",
@@ -181,17 +217,20 @@ func (status *YaGoStatus) eventReader() error {
 							Instance: event.Instance,
 						}
 					}
+
 					break
 				}
 			}
 		}
 	}
+
 	return nil
 }
 
 // Run starts the main loop.
 func (status *YaGoStatus) Run() error {
 	status.upd = make(chan int)
+
 	go (func() {
 		status.updateWorkspaces()
 		recv := i3.Subscribe(i3.WorkspaceEventType)
@@ -204,22 +243,21 @@ func (status *YaGoStatus) Run() error {
 			status.upd <- -1
 		}
 	})()
+
 	for widgetIndex, widget := range status.widgets {
 		c := make(chan []ygs.I3BarBlock)
 		status.widgetChans = append(status.widgetChans, c)
+
 		go func(widgetIndex int, c chan []ygs.I3BarBlock) {
-			for {
-				select {
-				case out := <-c:
-					status.addWidgetOutput(widgetIndex, out)
-				}
+			for out := range c {
+				status.addWidgetOutput(widgetIndex, out)
 			}
 		}(widgetIndex, c)
 
 		go func(widget ygs.Widget, c chan []ygs.I3BarBlock) {
 			defer (func() {
 				if r := recover(); r != nil {
-					c <- []ygs.I3BarBlock{ygs.I3BarBlock{
+					c <- []ygs.I3BarBlock{{
 						FullText: "Widget is panicking",
 						Color:    "#ff0000",
 					}}
@@ -229,7 +267,7 @@ func (status *YaGoStatus) Run() error {
 			})()
 			if err := widget.Run(c); err != nil {
 				log.Print(err)
-				c <- []ygs.I3BarBlock{ygs.I3BarBlock{
+				c <- []ygs.I3BarBlock{{
 					FullText: err.Error(),
 					Color:    "#ff0000",
 				}}
@@ -241,36 +279,43 @@ func (status *YaGoStatus) Run() error {
 	encoder.SetEscapeHTML(false)
 	encoder.SetIndent("", "  ")
 
-	encoder.Encode(ygs.I3BarHeader{
+	if err := encoder.Encode(ygs.I3BarHeader{
 		Version:     1,
 		ClickEvents: true,
 		StopSignal:  int(status.cfg.Signals.StopSignal),
 		ContSignal:  int(status.cfg.Signals.ContSignal),
-	})
+	}); err != nil {
+		log.Printf("Failed to encode I3BarHeader: %s", err)
+	}
+
 	fmt.Print("\n[\n[]")
+
 	go func() {
-		for {
-			select {
-			case <-status.upd:
-				var result []ygs.I3BarBlock
-				for widgetIndex, widgetOutput := range status.widgetsOutput {
-					if checkWorkspaceConditions(status.widgetsConfig[widgetIndex].Workspaces, status.visibleWorkspaces) {
-						result = append(result, widgetOutput...)
-					}
+		for range status.upd {
+			var result []ygs.I3BarBlock
+			for widgetIndex, widgetOutput := range status.widgetsOutput {
+				if checkWorkspaceConditions(status.widgetsConfig[widgetIndex].Workspaces, status.visibleWorkspaces) {
+					result = append(result, widgetOutput...)
 				}
-				fmt.Print(",")
-				encoder.Encode(result)
+			}
+			fmt.Print(",")
+			err := encoder.Encode(result)
+			if err != nil {
+				log.Printf("Failed to encode result: %s", err)
 			}
 		}
 	}()
+
 	return status.eventReader()
 }
 
 // Shutdown shutdowns widgets and main loop.
 func (status *YaGoStatus) Shutdown() error {
 	var wg sync.WaitGroup
+
 	for _, widget := range status.widgets {
 		wg.Add(1)
+
 		go func(widget ygs.Widget) {
 			defer wg.Done()
 			defer (func() {
@@ -284,7 +329,9 @@ func (status *YaGoStatus) Shutdown() error {
 			}
 		}(widget)
 	}
+
 	wg.Wait()
+
 	return nil
 }
 
@@ -324,43 +371,58 @@ func (status *YaGoStatus) Continue() {
 
 func (status *YaGoStatus) updateWorkspaces() {
 	var err error
+
 	status.workspaces, err = i3.GetWorkspaces()
+
 	if err != nil {
 		log.Printf("Failed to get workspaces: %s", err)
 	}
+
 	var vw []string
+
 	for i := range status.workspaces {
 		if status.workspaces[i].Visible {
 			vw = append(vw, status.workspaces[i].Name)
 		}
 	}
+
 	status.visibleWorkspaces = vw
 }
 
-func mergeBlocks(b *ygs.I3BarBlock, tpl ygs.I3BarBlock) {
-	jb, _ := json.Marshal(*b)
+func mergeBlocks(b *ygs.I3BarBlock, tpl ygs.I3BarBlock) error {
+	jb, err := json.Marshal(*b)
+	if err != nil {
+		return err
+	}
+
 	*b = tpl
-	json.Unmarshal(jb, b)
+
+	return json.Unmarshal(jb, b)
 }
 
 func checkModifiers(conditions []string, values []string) bool {
 	for _, c := range conditions {
 		isNegative := c[0] == '!'
 		c = strings.TrimLeft(c, "!")
+
 		found := false
+
 		for _, v := range values {
 			if c == v {
 				found = true
 				break
 			}
 		}
+
 		if found && isNegative {
 			return false
 		}
-		if (!found) && !isNegative {
+
+		if !found && !isNegative {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -368,23 +430,30 @@ func checkWorkspaceConditions(conditions []string, values []string) bool {
 	if len(conditions) == 0 {
 		return true
 	}
+
 	pass := 0
+
 	for _, c := range conditions {
 		isNegative := c[0] == '!'
 		c = strings.TrimLeft(c, "!")
+
 		found := false
+
 		for _, v := range values {
 			if c == v {
 				found = true
 				break
 			}
 		}
+
 		if found && !isNegative {
 			return true
 		}
+
 		if !found && isNegative {
 			pass++
 		}
 	}
+
 	return len(conditions) == pass
 }

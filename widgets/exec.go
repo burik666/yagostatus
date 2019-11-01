@@ -48,7 +48,7 @@ func NewExecWidget(params interface{}) (ygs.Widget, error) {
 	}
 
 	if len(w.params.Command) == 0 {
-		return nil, errors.New("missing 'command' setting")
+		return nil, errors.New("missing 'command'")
 	}
 
 	if w.params.Interval > 0 {
@@ -60,8 +60,10 @@ func NewExecWidget(params interface{}) (ygs.Widget, error) {
 		if sig < 0 || signals.SIGRTMIN+sig > signals.SIGRTMAX {
 			return nil, fmt.Errorf("signal should be between 0 AND %d", signals.SIGRTMAX-signals.SIGRTMIN)
 		}
+
 		w.signal = syscall.Signal(signals.SIGRTMIN + sig)
 	}
+
 	return w, nil
 }
 
@@ -76,10 +78,10 @@ func (w *ExecWidget) exec() error {
 		exc.AddEnv(
 			fmt.Sprintf("I3_%s=%s", strings.ToUpper(k), vst),
 		)
-
 	}
 
 	c := make(chan []ygs.I3BarBlock)
+
 	go (func() {
 		for {
 			blocks, ok := <-c
@@ -90,8 +92,11 @@ func (w *ExecWidget) exec() error {
 			w.setCustomFields(blocks)
 		}
 	})()
+
 	err = exc.Run(c, w.params.OutputFormat)
+
 	close(c)
+
 	return err
 }
 
@@ -107,6 +112,7 @@ func (w *ExecWidget) Run(c chan<- []ygs.I3BarBlock) error {
 	if w.signal != nil {
 		sigc := make(chan os.Signal, 1)
 		signal.Notify(sigc, w.signal)
+
 		go (func() {
 			for {
 				<-sigc
@@ -128,31 +134,36 @@ func (w *ExecWidget) Run(c chan<- []ygs.I3BarBlock) error {
 		err := w.exec()
 		if err != nil {
 			c <- []ygs.I3BarBlock{
-				ygs.I3BarBlock{
+				{
 					FullText: err.Error(),
 					Color:    "#ff0000",
 				},
 			}
 		}
 	}
+
 	return nil
 }
 
 // Event processes the widget events.
 func (w *ExecWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock) error {
 	w.setCustomFields(blocks)
+
 	if w.params.EventsUpdate {
 		w.upd <- struct{}{}
 	}
+
 	return nil
 }
 
 func (w *ExecWidget) setCustomFields(blocks []ygs.I3BarBlock) {
 	customfields := make(map[string]interface{})
+
 	for _, block := range blocks {
 		for k, v := range block.Custom {
 			customfields[k] = v
 		}
 	}
+
 	w.customfields = customfields
 }

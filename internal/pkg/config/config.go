@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"strings"
 	"syscall"
 
@@ -36,13 +37,15 @@ type WidgetConfig struct {
 // Validate checks widget configuration.
 func (c WidgetConfig) Validate() error {
 	if c.Name == "" {
-		return errors.New("Missing widget name")
+		return errors.New("missing widget name")
 	}
+
 	for ei := range c.Events {
 		if err := c.Events[ei].Validate(); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -59,22 +62,27 @@ type WidgetEventConfig struct {
 // Validate checks event parameters.
 func (e *WidgetEventConfig) Validate() error {
 	var availableWidgetEventModifiers = [...]string{"Shift", "Control", "Mod1", "Mod2", "Mod3", "Mod4", "Mod5"}
+
 	for _, mod := range e.Modifiers {
 		found := false
 		mod = strings.TrimLeft(mod, "!")
+
 		for _, m := range availableWidgetEventModifiers {
 			if mod == m {
 				found = true
 				break
 			}
 		}
+
 		if !found {
-			return fmt.Errorf("Unknown '%s' modifier", mod)
+			return fmt.Errorf("unknown '%s' modifier", mod)
 		}
 	}
+
 	if e.OutputFormat == "" {
 		e.OutputFormat = executor.OutputFormatNone
 	}
+
 	return nil
 }
 
@@ -84,6 +92,7 @@ func LoadFile(filename string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return Parse(data)
 }
 
@@ -100,7 +109,10 @@ func Parse(data []byte) (*Config, error) {
 	if err := yaml.Unmarshal(data, &config); err != nil {
 		return nil, trimYamlErr(err, false)
 	}
-	yaml.Unmarshal(data, &raw)
+
+	if err := yaml.Unmarshal(data, &raw); err != nil {
+		return nil, trimYamlErr(err, false)
+	}
 
 	for widgetIndex := range config.Widgets {
 		widget := &config.Widgets[widgetIndex]
@@ -109,17 +121,30 @@ func Parse(data []byte) (*Config, error) {
 		tpl, ok := params["template"]
 		if ok {
 			if err := json.Unmarshal([]byte(tpl.(string)), &widget.Template); err != nil {
-				return nil, err
+				name, params := ygs.ErrorWidget(err.Error())
+				*widget = WidgetConfig{
+					Name:   name,
+					Params: params,
+				}
+
+				log.Printf("template error: %s", err)
+
+				continue
 			}
 		}
 
-		tmp, _ := yaml.Marshal(params["events"])
+		tmp, err := yaml.Marshal(params["events"])
+		if err != nil {
+			return nil, err
+		}
+
 		if err := yaml.UnmarshalStrict(tmp, &widget.Events); err != nil {
 			name, params := ygs.ErrorWidget(trimYamlErr(err, true).Error())
 			*widget = WidgetConfig{
 				Name:   name,
 				Params: params,
 			}
+
 			continue
 		}
 
@@ -130,6 +155,7 @@ func Parse(data []byte) (*Config, error) {
 				Name:   name,
 				Params: params,
 			}
+
 			continue
 		}
 
@@ -138,6 +164,7 @@ func Parse(data []byte) (*Config, error) {
 		delete(params, "template")
 		delete(params, "events")
 	}
+
 	return &config, nil
 }
 
@@ -147,5 +174,6 @@ func trimYamlErr(err error, trimLineN bool) error {
 		msg = strings.TrimPrefix(msg, "line ")
 		msg = strings.TrimLeft(msg, "1234567890: ")
 	}
+
 	return errors.New(msg)
 }

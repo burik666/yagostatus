@@ -49,6 +49,8 @@ type I3BarClickEvent struct {
 	Modifiers []string `json:"modifiers"`
 }
 
+type dataWrapped I3BarBlock
+
 // UnmarshalJSON unmarshals json with custom keys (with _ prefix).
 func (b *I3BarBlock) UnmarshalJSON(data []byte) error {
 	var resmap map[string]interface{}
@@ -57,7 +59,6 @@ func (b *I3BarBlock) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	type dataWrapped I3BarBlock
 	wr := dataWrapped(*b)
 
 	for k, v := range resmap {
@@ -70,7 +71,9 @@ func (b *I3BarBlock) UnmarshalJSON(data []byte) error {
 			if wr.Custom == nil {
 				wr.Custom = make(map[string]interface{})
 			}
+
 			wr.Custom[k] = v
+
 			delete(resmap, k)
 		}
 	}
@@ -78,10 +81,13 @@ func (b *I3BarBlock) UnmarshalJSON(data []byte) error {
 	buf := &bytes.Buffer{}
 
 	enc := json.NewEncoder(buf)
-	enc.Encode(resmap)
+	if err := enc.Encode(resmap); err != nil {
+		return err
+	}
 
 	decoder := json.NewDecoder(buf)
 	decoder.DisallowUnknownFields()
+
 	if err := decoder.Decode(&wr); err != nil {
 		return err
 	}
@@ -93,15 +99,14 @@ func (b *I3BarBlock) UnmarshalJSON(data []byte) error {
 
 // MarshalJSON marshals json with custom keys (with _ prefix).
 func (b I3BarBlock) MarshalJSON() ([]byte, error) {
-	type dataWrapped I3BarBlock
-	var wd dataWrapped
-	wd = dataWrapped(b)
+	wd := dataWrapped(b)
 
 	if len(wd.Custom) == 0 {
 		buf := &bytes.Buffer{}
 		encoder := json.NewEncoder(buf)
 		encoder.SetEscapeHTML(false)
 		err := encoder.Encode(wd)
+
 		return buf.Bytes(), err
 	}
 
@@ -110,14 +115,19 @@ func (b I3BarBlock) MarshalJSON() ([]byte, error) {
 	var tmp []byte
 
 	tmp, _ = json.Marshal(wd)
-	json.Unmarshal(tmp, &resmap)
+	if err := json.Unmarshal(tmp, &resmap); err != nil {
+		return nil, err
+	}
 
 	tmp, _ = json.Marshal(wd.Custom)
-	json.Unmarshal(tmp, &resmap)
+	if err := json.Unmarshal(tmp, &resmap); err != nil {
+		return nil, err
+	}
 
 	buf := &bytes.Buffer{}
 	encoder := json.NewEncoder(buf)
 	encoder.SetEscapeHTML(false)
 	err := encoder.Encode(resmap)
+
 	return buf.Bytes(), err
 }

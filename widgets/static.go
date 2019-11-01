@@ -32,7 +32,7 @@ func NewStaticWidget(params interface{}) (ygs.Widget, error) {
 	}
 
 	if len(w.params.Blocks) == 0 {
-		return nil, errors.New("missing 'blocks' setting")
+		return nil, errors.New("missing 'blocks'")
 	}
 
 	if err := json.Unmarshal([]byte(w.params.Blocks), &w.blocks); err != nil {

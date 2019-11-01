@@ -37,14 +37,15 @@ func NewWrapperWidget(params interface{}) (ygs.Widget, error) {
 	}
 
 	if len(w.params.Command) == 0 {
-		return nil, errors.New("missing 'command' setting")
+		return nil, errors.New("missing 'command'")
 	}
 
-	var err error
-	w.exc, err = executor.Exec(w.params.Command)
+	exc, err := executor.Exec(w.params.Command)
 	if err != nil {
 		return nil, err
 	}
+
+	w.exc = exc
 
 	return w, nil
 }
@@ -63,10 +64,12 @@ func (w *WrapperWidget) Run(c chan<- []ygs.I3BarBlock) error {
 	err = w.exc.Run(c, executor.OutputFormatJSON)
 	if err == nil {
 		err = errors.New("process exited unexpectedly")
+
 		if state := w.exc.ProcessState(); state != nil {
 			return fmt.Errorf("%w: %s", err, state.String())
 		}
 	}
+
 	return err
 }
 
@@ -79,12 +82,23 @@ func (w *WrapperWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock
 	if header := w.exc.I3BarHeader(); header != nil && header.ClickEvents {
 		if !w.eventBracketWritten {
 			w.eventBracketWritten = true
-			w.stdin.Write([]byte("["))
+			if _, err := w.stdin.Write([]byte("[")); err != nil {
+				return err
+			}
 		}
-		msg, _ := json.Marshal(event)
-		w.stdin.Write(msg)
-		w.stdin.Write([]byte(",\n"))
+
+		msg, err := json.Marshal(event)
+		if err != nil {
+			return err
+		}
+
+		msg = append(msg, []byte(",\n")...)
+
+		if _, err := w.stdin.Write(msg); err != nil {
+			return err
+		}
 	}
+
 	return nil
 }
 
@@ -95,6 +109,7 @@ func (w *WrapperWidget) Stop() error {
 			return w.exc.Signal(syscall.Signal(header.StopSignal))
 		}
 	}
+
 	return w.exc.Signal(syscall.SIGSTOP)
 }
 
@@ -105,6 +120,7 @@ func (w *WrapperWidget) Continue() error {
 			return w.exc.Signal(syscall.Signal(header.ContSignal))
 		}
 	}
+
 	return w.exc.Signal(syscall.SIGCONT)
 }
 
@@ -115,7 +131,9 @@ func (w *WrapperWidget) Shutdown() error {
 		if err != nil {
 			return err
 		}
+
 		return w.exc.Wait()
 	}
+
 	return nil
 }

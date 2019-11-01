@@ -2,8 +2,10 @@ package ygs
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"gopkg.in/yaml.v2"
 )
@@ -20,12 +22,14 @@ var registeredWidgets = make(map[string]widget)
 // RegisterWidget registers widget.
 func RegisterWidget(name string, newFunc newWidgetFunc, defaultParams interface{}) {
 	if _, ok := registeredWidgets[name]; ok {
-		panic(fmt.Sprintf("Widget '%s' already registered", name))
+		panic(fmt.Sprintf("widget '%s' already registered", name))
 	}
+
 	def := reflect.ValueOf(defaultParams)
 	if def.Kind() != reflect.Struct {
 		panic("defaultParams should be a struct")
 	}
+
 	registeredWidgets[name] = widget{
 		newFunc:       newFunc,
 		defaultParams: defaultParams,
@@ -36,7 +40,7 @@ func RegisterWidget(name string, newFunc newWidgetFunc, defaultParams interface{
 func NewWidget(name string, rawParams map[string]interface{}) (Widget, error) {
 	widget, ok := registeredWidgets[name]
 	if !ok {
-		return nil, fmt.Errorf("Widget '%s' not found", name)
+		return nil, fmt.Errorf("widget '%s' not found", name)
 	}
 
 	def := reflect.ValueOf(widget.defaultParams)
@@ -44,9 +48,13 @@ func NewWidget(name string, rawParams map[string]interface{}) (Widget, error) {
 	params := reflect.New(def.Type())
 	params.Elem().Set(def)
 
-	b, _ := yaml.Marshal(rawParams)
-	if err := yaml.UnmarshalStrict(b, params.Interface()); err != nil {
+	b, err := yaml.Marshal(rawParams)
+	if err != nil {
 		return nil, err
+	}
+
+	if err := yaml.UnmarshalStrict(b, params.Interface()); err != nil {
+		return nil, trimYamlErr(err, true)
 	}
 
 	return widget.newFunc(params.Elem().Interface())
@@ -55,7 +63,7 @@ func NewWidget(name string, rawParams map[string]interface{}) (Widget, error) {
 // ErrorWidget creates new widget with error message.
 func ErrorWidget(text string) (string, map[string]interface{}) {
 	blocks, _ := json.Marshal([]I3BarBlock{
-		I3BarBlock{
+		{
 			FullText: text,
 			Color:    "#ff0000",
 		},
@@ -64,4 +72,14 @@ func ErrorWidget(text string) (string, map[string]interface{}) {
 	return "static", map[string]interface{}{
 		"blocks": string(blocks),
 	}
+}
+
+func trimYamlErr(err error, trimLineN bool) error {
+	msg := strings.TrimPrefix(err.Error(), "yaml: unmarshal errors:\n  ")
+	if trimLineN {
+		msg = strings.TrimPrefix(msg, "line ")
+		msg = strings.TrimLeft(msg, "1234567890: ")
+	}
+
+	return errors.New(msg)
 }

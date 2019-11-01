@@ -41,7 +41,9 @@ func main() {
 	log.SetFlags(log.Ldate + log.Ltime + log.Lshortfile)
 
 	var configFile string
+
 	flag.StringVar(&configFile, "config", "", `config file (default "yagostatus.yml")`)
+
 	versionFlag := flag.Bool("version", false, "print version information and exit")
 
 	flag.Parse()
@@ -52,17 +54,20 @@ func main() {
 	}
 
 	var cfg *config.Config
+
 	var cfgError, err error
 
 	if configFile == "" {
 		cfg, cfgError = config.LoadFile("yagostatus.yml")
 		if os.IsNotExist(cfgError) {
 			cfgError = nil
+
 			cfg, err = config.Parse(builtinConfig)
 			if err != nil {
 				log.Fatalf("Failed to parse builtin config: %s", err)
 			}
 		}
+
 		if cfgError != nil {
 			cfg = &config.Config{}
 		}
@@ -77,6 +82,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create yagostatus instance: %s", err)
 	}
+
 	if cfgError != nil {
 		log.Printf("Failed to load config: %s", cfgError)
 		yaGoStatus.errorWidget(cfgError.Error())
@@ -84,6 +90,7 @@ func main() {
 
 	stopContSignals := make(chan os.Signal, 1)
 	signal.Notify(stopContSignals, cfg.Signals.StopSignal, cfg.Signals.ContSignal)
+
 	go func() {
 		for {
 			sig := <-stopContSignals
@@ -107,6 +114,7 @@ func main() {
 	}()
 
 	<-shutdownsignals
+
 	if err := yaGoStatus.Shutdown(); err != nil {
 		log.Printf("Failed to shutdown yagostatus: %s", err)
 	}

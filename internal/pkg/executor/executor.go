@@ -52,49 +52,60 @@ func (e *Executor) Run(c chan<- []ygs.I3BarBlock, format OutputFormat) error {
 	if err != nil {
 		return err
 	}
+
 	defer stdout.Close()
 
 	if err := e.cmd.Start(); err != nil {
 		return err
 	}
+
 	defer e.Wait()
 
 	if format == OutputFormatNone {
 		return nil
 	}
+
 	buf := &bufferCloser{}
 	outreader := io.TeeReader(stdout, buf)
 
 	decoder := json.NewDecoder(outreader)
 
-	isJSON := false
 	var firstMessage interface{}
 
 	err = decoder.Decode(&firstMessage)
+	if (err != nil) && format == OutputFormatJSON {
+		buf.Close()
 
+		return err
+	}
+
+	isJSON := false
 	switch firstMessage.(type) {
 	case map[string]interface{}:
 		isJSON = true
 	case []interface{}:
 		isJSON = true
 	}
-	if (err != nil) && format == OutputFormatJSON {
-		buf.Close()
-		return err
-	}
 
 	if err != nil || !isJSON || format == OutputFormatText {
-		io.Copy(ioutil.Discard, outreader)
+		_, err := io.Copy(ioutil.Discard, outreader)
+		if err != nil {
+			return err
+		}
+
 		if buf.Len() > 0 {
 			c <- []ygs.I3BarBlock{
-				ygs.I3BarBlock{
-					FullText: strings.Trim(string(buf.Bytes()), "\n "),
+				{
+					FullText: strings.Trim(buf.String(), "\n "),
 				},
 			}
 		}
+
 		buf.Close()
+
 		return nil
 	}
+
 	buf.Close()
 
 	firstMessageData, _ := json.Marshal(firstMessage)
@@ -105,7 +116,11 @@ func (e *Executor) Run(c chan<- []ygs.I3BarBlock, format OutputFormat) error {
 	var header ygs.I3BarHeader
 	if err := headerDecoder.Decode(&header); err == nil {
 		e.header = &header
-		decoder.Token()
+
+		_, err := decoder.Token()
+		if err != nil {
+			return err
+		}
 	} else {
 		var blocks []ygs.I3BarBlock
 		if err := json.Unmarshal(firstMessageData, &blocks); err != nil {
@@ -113,17 +128,18 @@ func (e *Executor) Run(c chan<- []ygs.I3BarBlock, format OutputFormat) error {
 		}
 		c <- blocks
 	}
+
 	for {
 		var blocks []ygs.I3BarBlock
 		if err := decoder.Decode(&blocks); err != nil {
 			if err == io.EOF {
 				return nil
 			}
+
 			return err
 		}
 		c <- blocks
 	}
-	return nil
 }
 
 func (e *Executor) Stdin() (io.WriteCloser, error) {
@@ -138,6 +154,7 @@ func (e *Executor) Wait() error {
 	if e.cmd != nil {
 		return e.cmd.Wait()
 	}
+
 	return nil
 }
 
@@ -145,6 +162,7 @@ func (e *Executor) Signal(sig os.Signal) error {
 	if e.cmd != nil && e.cmd.Process != nil {
 		return e.cmd.Process.Signal(sig)
 	}
+
 	return nil
 }
 
@@ -165,11 +183,13 @@ func (b *bufferCloser) Write(p []byte) (n int, err error) {
 	if b.stoped {
 		return len(p), nil
 	}
+
 	return b.Buffer.Write(p)
 }
 
 func (b *bufferCloser) Close() error {
 	b.stoped = true
 	b.Reset()
+
 	return nil
 }

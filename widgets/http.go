@@ -49,11 +49,11 @@ func NewHTTPWidget(params interface{}) (ygs.Widget, error) {
 	}
 
 	if len(w.params.Listen) == 0 {
-		return nil, errors.New("missing 'listen' param")
+		return nil, errors.New("missing 'listen'")
 	}
 
 	if len(w.params.Path) == 0 {
-		return nil, errors.New("missing 'path' setting")
+		return nil, errors.New("missing 'path'")
 	}
 
 	if instances == nil {
@@ -64,6 +64,7 @@ func NewHTTPWidget(params interface{}) (ygs.Widget, error) {
 		if _, ok := instance.paths[w.params.Path]; ok {
 			return nil, fmt.Errorf("path '%s' already in use", w.params.Path)
 		}
+
 		instance.mux.HandleFunc(w.params.Path, w.httpHandler)
 		instance.paths[w.params.Path] = struct{}{}
 	} else {
@@ -79,7 +80,6 @@ func NewHTTPWidget(params interface{}) (ygs.Widget, error) {
 			Addr:    w.params.Listen,
 			Handler: instance.mux,
 		}
-
 	}
 
 	return w, nil
@@ -100,6 +100,7 @@ func (w *HTTPWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock) e
 	if w.conn != nil {
 		return websocket.JSON.Send(w.conn, event)
 	}
+
 	return nil
 }
 
@@ -107,30 +108,41 @@ func (w *HTTPWidget) httpHandler(response http.ResponseWriter, request *http.Req
 	if request.Method == "GET" {
 		ws := websocket.Handler(w.wsHandler)
 		ws.ServeHTTP(response, request)
+
 		return
 	}
+
 	if request.Method == "POST" {
 		body, err := ioutil.ReadAll(request.Body)
 		if err != nil {
 			log.Printf("%s", err)
 		}
+
 		var messages []ygs.I3BarBlock
 		if err := json.Unmarshal(body, &messages); err != nil {
 			log.Printf("%s", err)
 			response.WriteHeader(http.StatusBadRequest)
 			fmt.Fprintf(response, "%s", err)
 		}
+
 		w.c <- messages
+
 		return
 	}
 
 	response.WriteHeader(http.StatusBadRequest)
-	response.Write([]byte("Bad request method, allow GET for websocket and POST for HTTP update"))
+
+	_, err := response.Write([]byte("bad request method, allow GET for websocket and POST for HTTP update"))
+	if err != nil {
+		log.Printf("failed to write response: %s", err)
+	}
 }
 
 func (w *HTTPWidget) wsHandler(ws *websocket.Conn) {
 	var messages []ygs.I3BarBlock
+
 	w.conn = ws
+
 	for {
 		if err := websocket.JSON.Receive(ws, &messages); err != nil {
 			if err == io.EOF {
@@ -138,15 +150,19 @@ func (w *HTTPWidget) wsHandler(ws *websocket.Conn) {
 					w.c <- nil
 					w.conn = nil
 				}
+
 				break
 			}
+
 			log.Printf("%s", err)
 		}
 
 		if w.conn != ws {
 			break
 		}
+
 		w.c <- messages
 	}
+
 	ws.Close()
 }
