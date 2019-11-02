@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -18,7 +19,8 @@ import (
 // ExecWidgetParams are widget parameters.
 type ExecWidgetParams struct {
 	Command      string
-	Interval     uint
+	Interval     int
+	Retry        *int
 	EventsUpdate bool `yaml:"events_update"`
 	Signal       *int
 	OutputFormat executor.OutputFormat `yaml:"output_format"`
@@ -34,7 +36,9 @@ type ExecWidget struct {
 	c            chan<- []ygs.I3BarBlock
 	upd          chan struct{}
 	customfields map[string]interface{}
-	ticker       *time.Ticker
+	tickerC      *chan struct{}
+
+	outputWG sync.WaitGroup
 }
 
 func init() {
@@ -51,8 +55,11 @@ func NewExecWidget(params interface{}) (ygs.Widget, error) {
 		return nil, errors.New("missing 'command'")
 	}
 
-	if w.params.Interval > 0 {
-		w.ticker = time.NewTicker(time.Duration(w.params.Interval) * time.Second)
+	if w.params.Retry != nil &&
+		*w.params.Retry > 0 &&
+		w.params.Interval > 0 &&
+		*w.params.Retry >= w.params.Interval {
+		return nil, errors.New("restart value should be less than interval")
 	}
 
 	if w.params.Signal != nil {
@@ -63,6 +70,9 @@ func NewExecWidget(params interface{}) (ygs.Widget, error) {
 
 		w.signal = syscall.Signal(signals.SIGRTMIN + sig)
 	}
+
+	w.upd = make(chan struct{}, 1)
+	w.upd <- struct{}{}
 
 	return w, nil
 }
@@ -82,11 +92,16 @@ func (w *ExecWidget) exec() error {
 
 	c := make(chan []ygs.I3BarBlock)
 
+	defer close(c)
+
+	w.outputWG.Add(1)
 	go (func() {
+		defer w.outputWG.Done()
+
 		for {
 			blocks, ok := <-c
 			if !ok {
-				break
+				return
 			}
 			w.c <- blocks
 			w.setCustomFields(blocks)
@@ -94,8 +109,19 @@ func (w *ExecWidget) exec() error {
 	})()
 
 	err = exc.Run(c, w.params.OutputFormat)
+	if err == nil {
+		if state := exc.ProcessState(); state != nil && state.ExitCode() != 0 {
+			if w.params.Retry != nil {
+				go (func() {
+					time.Sleep(time.Second * time.Duration(*w.params.Retry))
+					w.upd <- struct{}{}
+					w.resetTicker()
+				})()
+			}
 
-	close(c)
+			return fmt.Errorf("process exited unexpectedly: %s", state.String())
+		}
+	}
 
 	return err
 }
@@ -103,11 +129,21 @@ func (w *ExecWidget) exec() error {
 // Run starts the main loop.
 func (w *ExecWidget) Run(c chan<- []ygs.I3BarBlock) error {
 	w.c = c
-	if w.params.Interval == 0 && w.signal == nil {
+	if w.params.Interval == 0 && w.signal == nil && w.params.Retry == nil {
 		return w.exec()
 	}
 
-	w.upd = make(chan struct{}, 1)
+	if w.params.Interval > 0 {
+		w.resetTicker()
+	}
+
+	if w.params.Interval == -1 {
+		go (func() {
+			for {
+				w.upd <- struct{}{}
+			}
+		})()
+	}
 
 	if w.signal != nil {
 		sigc := make(chan os.Signal, 1)
@@ -121,24 +157,15 @@ func (w *ExecWidget) Run(c chan<- []ygs.I3BarBlock) error {
 		})()
 	}
 
-	if w.ticker != nil {
-		go (func() {
-			for {
-				<-w.ticker.C
-				w.upd <- struct{}{}
-			}
-		})()
-	}
-
-	for ; true; <-w.upd {
+	for range w.upd {
 		err := w.exec()
 		if err != nil {
-			c <- []ygs.I3BarBlock{
-				{
-					FullText: err.Error(),
-					Color:    "#ff0000",
-				},
-			}
+			w.outputWG.Wait()
+
+			c <- []ygs.I3BarBlock{{
+				FullText: err.Error(),
+				Color:    "#ff0000",
+			}}
 		}
 	}
 
@@ -166,4 +193,30 @@ func (w *ExecWidget) setCustomFields(blocks []ygs.I3BarBlock) {
 	}
 
 	w.customfields = customfields
+}
+
+func (w *ExecWidget) resetTicker() {
+	if w.tickerC != nil {
+		*w.tickerC <- struct{}{}
+	}
+
+	if w.params.Interval > 0 {
+		tickerC := make(chan struct{}, 1)
+		w.tickerC = &tickerC
+
+		go (func() {
+			ticker := time.NewTicker(time.Duration(w.params.Interval) * time.Second)
+
+			defer ticker.Stop()
+
+			for {
+				select {
+				case <-tickerC:
+					return
+				case <-ticker.C:
+					w.upd <- struct{}{}
+				}
+			}
+		})()
+	}
 }
