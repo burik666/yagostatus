@@ -3,8 +3,6 @@ Yet Another i3status replacement written in Go.
 
 [![GitHub release](https://img.shields.io/github/release/burik666/yagostatus.svg)](https://github.com/burik666/yagostatus)
 [![GitHub license](https://img.shields.io/github/license/burik666/yagostatus.svg)](https://github.com/burik666/yagostatus/blob/master/LICENSE)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/fb1e1cbd0987425783c6ae30d5c5a833)](https://app.codacy.com/app/burik666/yagostatus?utm_source=github.com&utm_medium=referral&utm_content=burik666/yagostatus&utm_campaign=badger)
-[![Twitter](https://img.shields.io/twitter/url/https/github.com/burik666/yagostatus.svg?style=social)](https://twitter.com/intent/tweet?text=Yet%20Another%20i3status%20replacement%20written%20in%20Go.%0A&url=https%3A%2F%2Fgithub.com%2Fburik666%2Fyagostatus&hashtags=i3,i3wm,i3status,golang)
 
 
 [![yagostatus.gif](https://raw.githubusercontent.com/wiki/burik666/yagostatus/yagostatus.gif)](https://github.com/burik666/yagostatus/wiki/Conky)
