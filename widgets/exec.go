@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"strings"
@@ -21,6 +22,7 @@ type ExecWidgetParams struct {
 	Command      string
 	Interval     int
 	Retry        *int
+	Silent       bool
 	EventsUpdate bool `yaml:"events_update"`
 	Signal       *int
 	OutputFormat executor.OutputFormat `yaml:"output_format"`
@@ -130,7 +132,16 @@ func (w *ExecWidget) exec() error {
 func (w *ExecWidget) Run(c chan<- []ygs.I3BarBlock) error {
 	w.c = c
 	if w.params.Interval == 0 && w.signal == nil && w.params.Retry == nil {
-		return w.exec()
+		err := w.exec()
+		if w.params.Silent {
+			if err != nil {
+				log.Print(err)
+			}
+
+			return nil
+		}
+
+		return err
 	}
 
 	if w.params.Interval > 0 {
@@ -160,12 +171,16 @@ func (w *ExecWidget) Run(c chan<- []ygs.I3BarBlock) error {
 	for range w.upd {
 		err := w.exec()
 		if err != nil {
-			w.outputWG.Wait()
+			if !w.params.Silent {
+				w.outputWG.Wait()
 
-			c <- []ygs.I3BarBlock{{
-				FullText: err.Error(),
-				Color:    "#ff0000",
-			}}
+				c <- []ygs.I3BarBlock{{
+					FullText: err.Error(),
+					Color:    "#ff0000",
+				}}
+			}
+
+			log.Print(err)
 		}
 	}
 

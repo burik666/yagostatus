@@ -155,6 +155,7 @@ This widget runs the command at the specified interval.
 - `command` - Command to execute (via `sh -c`).
 - `interval` - Update interval in seconds (`0` to run once at start; `-1` for loop without delay; default: `0`).
 - `retry` - Retry interval in seconds if command failed (default: none).
+- `silent` - Don't show error widget if command failed (default: `false`).
 - `events_update` - Update widget if an event occurred (default: `false`).
 - `output_format` - The command output format (none, text, json, auto) (default: `auto`).
 - `signal` - SIGRTMIN offset to update widget. Should be between 0 and `SIGRTMIN`-`SIGRTMAX`.
