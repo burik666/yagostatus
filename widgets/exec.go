@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -88,7 +87,7 @@ func (w *ExecWidget) exec() error {
 	for k, v := range w.customfields {
 		vst, _ := json.Marshal(v)
 		exc.AddEnv(
-			fmt.Sprintf("I3_%s=%s", strings.ToUpper(k), vst),
+			fmt.Sprintf("I3_%s=%s", k, vst),
 		)
 	}
 
