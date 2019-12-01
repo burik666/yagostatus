@@ -158,7 +158,7 @@ func (status *YaGoStatus) processWidgetEvents(widgetIndex int, outputIndex int, 
 }
 
 func (status *YaGoStatus) addWidgetOutput(widgetIndex int, blocks []ygs.I3BarBlock) {
-	status.widgetsOutput[widgetIndex] = make([]ygs.I3BarBlock, len(blocks))
+	output := make([]ygs.I3BarBlock, len(blocks))
 
 	for blockIndex := range blocks {
 		block := blocks[blockIndex]
@@ -169,8 +169,10 @@ func (status *YaGoStatus) addWidgetOutput(widgetIndex int, blocks []ygs.I3BarBlo
 		block.Name = fmt.Sprintf("yagostatus-%d-%s", widgetIndex, block.Name)
 		block.Instance = fmt.Sprintf("yagostatus-%d-%d-%s", widgetIndex, blockIndex, block.Instance)
 
-		status.widgetsOutput[widgetIndex][blockIndex] = block
+		output[blockIndex] = block
 	}
+
+	status.widgetsOutput[widgetIndex] = output
 
 	status.upd <- widgetIndex
 }
