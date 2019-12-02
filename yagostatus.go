@@ -119,9 +119,8 @@ func (status *YaGoStatus) processWidgetEvents(widgetIndex int, outputIndex int, 
 			)
 
 			for k, v := range status.widgetsOutput[widgetIndex][outputIndex].Custom {
-				vst, _ := json.Marshal(v)
 				exc.AddEnv(
-					fmt.Sprintf("I3_%s=%s", k, vst),
+					fmt.Sprintf("I3_%s=%s", k, v),
 				)
 			}
 

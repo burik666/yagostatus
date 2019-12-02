@@ -1,7 +1,6 @@
 package widgets
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -36,7 +35,7 @@ type ExecWidget struct {
 	signal       os.Signal
 	c            chan<- []ygs.I3BarBlock
 	upd          chan struct{}
-	customfields map[string]interface{}
+	customfields map[string]ygs.Vary
 	tickerC      *chan struct{}
 
 	outputWG sync.WaitGroup
@@ -85,9 +84,8 @@ func (w *ExecWidget) exec() error {
 	}
 
 	for k, v := range w.customfields {
-		vst, _ := json.Marshal(v)
 		exc.AddEnv(
-			fmt.Sprintf("I3_%s=%s", k, vst),
+			fmt.Sprintf("I3_%s=%s", k, v),
 		)
 	}
 
@@ -198,7 +196,7 @@ func (w *ExecWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock) e
 }
 
 func (w *ExecWidget) setCustomFields(blocks []ygs.I3BarBlock) {
-	customfields := make(map[string]interface{})
+	customfields := make(map[string]ygs.Vary)
 
 	for _, block := range blocks {
 		for k, v := range block.Custom {
