@@ -15,7 +15,7 @@ type I3BarHeader struct {
 
 // I3BarBlock represents a block of i3bar message.
 type I3BarBlock struct {
-	FullText            string          `json:"full_text"`
+	FullText            string          `json:"full_text,omitempty"`
 	ShortText           string          `json:"short_text,omitempty"`
 	Color               string          `json:"color,omitempty"`
 	BorderColor         string          `json:"border,omitempty"`
