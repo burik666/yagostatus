@@ -10,6 +10,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"sync"
 
 	"github.com/burik666/yagostatus/ygs"
 
@@ -29,9 +30,11 @@ type HTTPWidget struct {
 
 	params HTTPWidgetParams
 
-	conn     *websocket.Conn
 	c        chan<- []ygs.I3BarBlock
 	instance *httpInstance
+
+	clients map[*websocket.Conn]chan interface{}
+	cm      sync.RWMutex
 }
 
 type httpInstance struct {
@@ -93,6 +96,7 @@ func NewHTTPWidget(params interface{}) (ygs.Widget, error) {
 	instance.mux.HandleFunc(w.params.Path, w.httpHandler)
 	instance.paths[instanceKey] = struct{}{}
 
+	w.clients = make(map[*websocket.Conn]chan interface{})
 	return w, nil
 }
 
@@ -121,11 +125,7 @@ func (w *HTTPWidget) Run(c chan<- []ygs.I3BarBlock) error {
 
 // Event processes the widget events.
 func (w *HTTPWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock) error {
-	if w.conn != nil {
-		return websocket.JSON.Send(w.conn, event)
-	}
-
-	return nil
+	return w.broadcast(event)
 }
 
 func (w *HTTPWidget) Shutdown() error {
@@ -138,8 +138,14 @@ func (w *HTTPWidget) Shutdown() error {
 
 func (w *HTTPWidget) httpHandler(response http.ResponseWriter, request *http.Request) {
 	if request.Method == "GET" {
-		ws := websocket.Handler(w.wsHandler)
-		ws.ServeHTTP(response, request)
+		serv := websocket.Server{
+			Handshake: func(cfg *websocket.Config, r *http.Request) error {
+				return nil
+			},
+			Handler: w.wsHandler,
+		}
+
+		serv.ServeHTTP(response, request)
 
 		return
 	}
@@ -171,30 +177,56 @@ func (w *HTTPWidget) httpHandler(response http.ResponseWriter, request *http.Req
 }
 
 func (w *HTTPWidget) wsHandler(ws *websocket.Conn) {
-	var messages []ygs.I3BarBlock
+	defer ws.Close()
 
-	w.conn = ws
+	ch := make(chan interface{})
+
+	w.cm.RLock()
+	w.clients[ws] = ch
+	w.cm.RUnlock()
+
+	var blocks []ygs.I3BarBlock
+
+	go func() {
+		for {
+			msg, ok := <-ch
+			if !ok {
+				return
+			}
+
+			if err := websocket.JSON.Send(ws, msg); err != nil {
+				log.Printf("failed to send msg: %s", err)
+			}
+		}
+	}()
 
 	for {
-		if err := websocket.JSON.Receive(ws, &messages); err != nil {
+		if err := websocket.JSON.Receive(ws, &blocks); err != nil {
 			if err == io.EOF {
-				if w.conn == ws {
-					w.c <- nil
-					w.conn = nil
-				}
-
 				break
 			}
 
-			log.Printf("%s", err)
-		}
-
-		if w.conn != ws {
+			log.Printf("invalid message: %s", err)
 			break
 		}
 
-		w.c <- messages
+		w.c <- blocks
 	}
 
-	ws.Close()
+	w.cm.Lock()
+	delete(w.clients, ws)
+	w.cm.Unlock()
+
+	close(ch)
+}
+
+func (w *HTTPWidget) broadcast(msg interface{}) error {
+	w.cm.RLock()
+	defer w.cm.RUnlock()
+
+	for _, ch := range w.clients {
+		ch <- msg
+	}
+
+	return nil
 }
