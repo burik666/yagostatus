@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strings"
 	"syscall"
 
@@ -137,6 +138,33 @@ WIDGET:
 				snipWidgetsConfig[i].WorkDir = wd
 				snipWidgetsConfig[i].IncludeStack = append(widget.IncludeStack, widget.Name)
 				json.Unmarshal(tpls, &snipWidgetsConfig[i].Templates)
+
+				snipEvents := snipWidgetsConfig[i].Events
+				for _, e := range widget.Events {
+					if e.Override {
+						sort.Strings(e.Modifiers)
+
+						ne := make([]ygs.WidgetEventConfig, 0, len(snipEvents))
+
+						for _, se := range snipEvents {
+							sort.Strings(se.Modifiers)
+
+							if e.Button == se.Button &&
+								e.Name == se.Name &&
+								e.Instance == se.Instance &&
+								reflect.DeepEqual(e.Modifiers, se.Modifiers) {
+
+								continue
+							}
+
+							ne = append(ne, se)
+						}
+						snipEvents = append(ne, e)
+					} else {
+						snipEvents = append(snipEvents, e)
+					}
+				}
+				snipWidgetsConfig[i].Events = snipEvents
 			}
 
 			i := widgetIndex

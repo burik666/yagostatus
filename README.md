@@ -103,6 +103,7 @@ Example:
     * `output_format` - The command output format (none, text, json, auto) (default: `none`).
     * `name` - Filter by `name` for widgets with multiple blocks (default: empty).
     * `instance` - Filter by `instance` for widgets with multiple blocks (default: empty).
+    * `override` - If `true`, previously defined events with the same `button`, `modifier`, `name` and `instance` will be ignored (default: `false`)
 
 Example:
 ```yml
