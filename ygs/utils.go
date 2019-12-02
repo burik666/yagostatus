@@ -37,7 +37,8 @@ func RegisterWidget(name string, newFunc newWidgetFunc, defaultParams interface{
 }
 
 // NewWidget creates new widget by name.
-func NewWidget(name string, rawParams map[string]interface{}) (Widget, error) {
+func NewWidget(widgetConfig WidgetConfig) (Widget, error) {
+	name := widgetConfig.Name
 	widget, ok := registeredWidgets[name]
 	if !ok {
 		return nil, fmt.Errorf("widget '%s' not found", name)
@@ -46,9 +47,10 @@ func NewWidget(name string, rawParams map[string]interface{}) (Widget, error) {
 	def := reflect.ValueOf(widget.defaultParams)
 
 	params := reflect.New(def.Type())
-	params.Elem().Set(def)
+	pe := params.Elem()
+	pe.Set(def)
 
-	b, err := yaml.Marshal(rawParams)
+	b, err := yaml.Marshal(widgetConfig.Params)
 	if err != nil {
 		return nil, err
 	}
@@ -57,11 +59,20 @@ func NewWidget(name string, rawParams map[string]interface{}) (Widget, error) {
 		return nil, trimYamlErr(err, true)
 	}
 
-	return widget.newFunc(params.Elem().Interface())
+	if _, ok := widgetConfig.Params["workdir"]; !ok {
+		for i := 0; i < pe.NumField(); i++ {
+			fn := pe.Type().Field(i).Name
+			if strings.ToLower(fn) == "workdir" {
+				pe.Field(i).SetString(widgetConfig.WorkDir)
+			}
+		}
+	}
+
+	return widget.newFunc(pe.Interface())
 }
 
 // ErrorWidget creates new widget with error message.
-func ErrorWidget(text string) (string, map[string]interface{}) {
+func ErrorWidget(text string) WidgetConfig {
 	blocks, _ := json.Marshal([]I3BarBlock{
 		{
 			FullText: text,
@@ -69,9 +80,13 @@ func ErrorWidget(text string) (string, map[string]interface{}) {
 		},
 	})
 
-	return "static", map[string]interface{}{
-		"blocks": string(blocks),
+	return WidgetConfig{
+		Name: "static",
+		Params: map[string]interface{}{
+			"blocks": string(blocks),
+		},
 	}
+
 }
 
 func trimYamlErr(err error, trimLineN bool) error {

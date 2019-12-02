@@ -23,7 +23,7 @@ import (
 type YaGoStatus struct {
 	widgets       []ygs.Widget
 	widgetsOutput [][]ygs.I3BarBlock
-	widgetsConfig []config.WidgetConfig
+	widgetsConfig []ygs.WidgetConfig
 	widgetChans   []chan []ygs.I3BarBlock
 
 	upd chan int
@@ -48,7 +48,7 @@ func NewYaGoStatus(cfg config.Config) (*YaGoStatus, error) {
 				}
 			})()
 
-			widget, err := ygs.NewWidget(w.Name, w.Params)
+			widget, err := ygs.NewWidget(w)
 			if err != nil {
 				log.Printf("Failed to create widget: %s", err)
 				status.errorWidget(err.Error())
@@ -69,11 +69,11 @@ func (status *YaGoStatus) errorWidget(text string) {
 		panic(err)
 	}
 
-	status.AddWidget(errWidget, config.WidgetConfig{})
+	status.AddWidget(errWidget, ygs.WidgetConfig{})
 }
 
 // AddWidget adds widget to statusbar.
-func (status *YaGoStatus) AddWidget(widget ygs.Widget, config config.WidgetConfig) {
+func (status *YaGoStatus) AddWidget(widget ygs.Widget, config ygs.WidgetConfig) {
 	status.widgets = append(status.widgets, widget)
 	status.widgetsOutput = append(status.widgetsOutput, nil)
 	status.widgetsConfig = append(status.widgetsConfig, config)
@@ -146,7 +146,7 @@ func (status *YaGoStatus) processWidgetEvents(widgetIndex int, outputIndex int, 
 				return err
 			}
 
-			err = exc.Run(status.widgetChans[widgetIndex], widgetEvent.OutputFormat)
+			err = exc.Run(status.widgetChans[widgetIndex], executor.OutputFormat(widgetEvent.OutputFormat))
 			if err != nil {
 				return err
 			}
