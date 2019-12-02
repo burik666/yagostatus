@@ -186,17 +186,22 @@ The static widget renders the blocks. Useful for labels and buttons.
 
 The http widget starts http server and accept HTTP or Websocket requests.
 
-- `listen` - Address and port for binding (example: `localhost:9900`).
+- `network` - `tcp` or `unix` (default `tcp`).
+- `listen` - Hostname and port or path to the socket file to bind (example: `localhost:9900`, `/tmp/yagostatus.sock`).
 - `path` - Path for receiving requests (example: `/mystatus/`).
 Must be unique for multiple widgets with same `listen`.
 
 For example, you can update the widget with the following command:
 
-    curl http://localhost:9900/mystatus/  -d '[{"full_text": "hello"}, {"full_text": "world"}]'
+    curl http://localhost:9900/mystatus/ -d '[{"full_text": "hello"}, {"full_text": "world"}]'
 
 Send an empty array to clear:
 
-    curl http://localhost:9900/mystatus/  -d '[]'
+    curl http://localhost:9900/mystatus/ -d '[]'
+
+Unix socket:
+
+    curl --unix-socket /tmp/yagostatus.sock localhost/mystatus/ -d '[{"full_text": "hello"}]'
 
 
 ## Examples
