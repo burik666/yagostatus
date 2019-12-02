@@ -90,3 +90,10 @@ func (b I3BarBlock) MarshalJSON() ([]byte, error) {
 
 	return buf.Bytes(), err
 }
+
+func (b *I3BarBlock) Apply(tpl I3BarBlock) {
+	jb, _ := json.Marshal(b)
+	*b = tpl
+
+	json.Unmarshal(jb, b)
+}

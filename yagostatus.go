@@ -159,10 +159,16 @@ func (status *YaGoStatus) processWidgetEvents(widgetIndex int, outputIndex int, 
 func (status *YaGoStatus) addWidgetOutput(widgetIndex int, blocks []ygs.I3BarBlock) {
 	output := make([]ygs.I3BarBlock, len(blocks))
 
+	tplc := len(status.widgetsConfig[widgetIndex].Templates)
 	for blockIndex := range blocks {
 		block := blocks[blockIndex]
-		if err := mergeBlocks(&block, status.widgetsConfig[widgetIndex].Template); err != nil {
-			log.Printf("Failed to merge blocks: %s", err)
+
+		if tplc == 1 {
+			block.Apply(status.widgetsConfig[widgetIndex].Templates[0])
+		} else {
+			if blockIndex < tplc {
+				block.Apply(status.widgetsConfig[widgetIndex].Templates[blockIndex])
+			}
 		}
 
 		block.Name = fmt.Sprintf("yagostatus-%d-%s", widgetIndex, block.Name)
@@ -388,17 +394,6 @@ func (status *YaGoStatus) updateWorkspaces() {
 	}
 
 	status.visibleWorkspaces = vw
-}
-
-func mergeBlocks(b *ygs.I3BarBlock, tpl ygs.I3BarBlock) error {
-	jb, err := json.Marshal(*b)
-	if err != nil {
-		return err
-	}
-
-	*b = tpl
-
-	return json.Unmarshal(jb, b)
 }
 
 func checkModifiers(conditions []string, values []string) bool {

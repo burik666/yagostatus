@@ -8,7 +8,7 @@ import (
 type WidgetConfig struct {
 	Name       string              `yaml:"widget"`
 	Workspaces []string            `yaml:"workspaces"`
-	Template   I3BarBlock          `yaml:"-"`
+	Templates  []I3BarBlock        `yaml:"-"`
 	Events     []WidgetEventConfig `yaml:"events"`
 	WorkDir    string              `yaml:"-"`
 

@@ -29,12 +29,12 @@ widgets:
     command: /usr/bin/i3status
   - widget: clock
     format: Jan _2 Mon 15:04:05 # https://golang.org/pkg/time/#Time.Format
-    template: >
-        {
+    templates: >
+        [{
             "color": "#ffffff",
             "separator": true,
             "separator_block_width": 20
-        }
+        }]
 `)
 
 func main() {

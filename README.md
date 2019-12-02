@@ -53,12 +53,12 @@ widgets:
 
   - widget: clock
     format: Jan _2 Mon 15:04:05 # https://golang.org/pkg/time/#Time.Format
-    template: >
-        {
+    templates: >
+        [{
             "color": "#ffffff",
             "separator": true,
             "separator_block_width": 20
-        }
+        }]
 ```
 ## Widgets
 
@@ -93,7 +93,7 @@ Example:
     ]
 ```
 
-- `template` - The template that is applied to the output of the widget.
+- `templates` - The templates that apply to widget blocks.
 - `events` - List of commands to be executed on user actions.
     * `button` - X11 button ID (0 for any, 1 to 3 for left/middle/right mouse button. 4/5 for mouse wheel up/down. Default: `0`).
     * `modifiers` - List of X11 modifiers condition.
@@ -118,10 +118,15 @@ Example:
             "name": "ch"
         }
     ]
-  template: >
-    {
-        "color": "#0000ff"
-    }
+  templates: >
+    [
+        {
+            "color": "#ff8000"
+        },
+        {
+            "color": "#ff3030"
+        }
+    ]
   events:
     - button: 1
       command: /usr/bin/firefox
@@ -268,12 +273,12 @@ bindsym XF86AudioMute exec amixer -q set Master toggle; exec pkill -SIGRTMIN+1 y
         - button: 5
           command: amixer -q set Master 3%-
 
-    template: >
-        {
+    templates: >
+        [{
             "markup": "pango",
             "separator": true,
             "separator_block_width": 20
-        }
+        }]
 ```
 
 ### Weather
@@ -296,11 +301,11 @@ Requires [jq](https://stedolan.github.com/jq/) for json parsing.
   - widget: exec
     command: curl -s 'http://api.openweathermap.org/data/2.5/weather?q=London,uk&units=metric&appid=<APPID>'|jq .main.temp
     interval: 300
-    template: >
-        {
+    templates: >
+        [{
             "separator": true,
             "separator_block_width": 20
-        }
+        }]
 ```
 
 ### Conky

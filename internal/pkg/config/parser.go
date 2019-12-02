@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -40,6 +39,42 @@ WIDGET:
 		if widget.WorkDir == "" {
 			widget.WorkDir = workdir
 		}
+
+		// for backward compatibility
+		if itpl, ok := params["template"]; ok {
+			tpl, ok := itpl.(string)
+			if !ok {
+				setError(widget, fmt.Errorf("invalid template"), false)
+				continue WIDGET
+			}
+
+			widget.Templates = append(widget.Templates, ygs.I3BarBlock{})
+			if err := json.Unmarshal([]byte(tpl), &widget.Templates[0]); err != nil {
+				setError(widget, err, false)
+
+				continue WIDGET
+			}
+
+			delete(params, "template")
+		}
+
+		if itpls, ok := params["templates"]; ok {
+			tpls, ok := itpls.(string)
+			if !ok {
+				setError(widget, fmt.Errorf("invalid templates"), false)
+				continue WIDGET
+			}
+
+			if err := json.Unmarshal([]byte(tpls), &widget.Templates); err != nil {
+				setError(widget, err, false)
+
+				continue WIDGET
+			}
+
+			delete(params, "templates")
+		}
+
+		tpls, _ := json.Marshal(widget.Templates)
 
 		if len(widget.Name) > 0 && widget.Name[0] == '$' {
 			for i := range widget.IncludeStack {
@@ -101,6 +136,7 @@ WIDGET:
 			for i := range snipWidgetsConfig {
 				snipWidgetsConfig[i].WorkDir = wd
 				snipWidgetsConfig[i].IncludeStack = append(widget.IncludeStack, widget.Name)
+				json.Unmarshal(tpls, &snipWidgetsConfig[i].Templates)
 			}
 
 			i := widgetIndex
@@ -110,18 +146,6 @@ WIDGET:
 			widgetIndex--
 
 			continue WIDGET
-		}
-
-		if tpl, ok := params["template"]; ok {
-			if err := json.Unmarshal([]byte(tpl.(string)), &widget.Template); err != nil {
-				setError(widget, err, false)
-
-				log.Printf("template error: %s", err)
-
-				continue WIDGET
-			}
-
-			delete(params, "template")
 		}
 
 		if err := widget.Validate(); err != nil {
