@@ -47,6 +47,12 @@ func Exec(command string, args ...string) (*Executor, error) {
 	return e, nil
 }
 
+func (e *Executor) SetWD(wd string) {
+	if e.cmd != nil {
+		e.cmd.Dir = wd
+	}
+}
+
 func (e *Executor) Run(c chan<- []ygs.I3BarBlock, format OutputFormat) error {
 	stdout, err := e.cmd.StdoutPipe()
 	if err != nil {

@@ -105,6 +105,8 @@ func (status *YaGoStatus) processWidgetEvents(widgetIndex int, outputIndex int, 
 				return err
 			}
 
+			exc.SetWD(widgetEvent.WorkDir)
+
 			exc.AddEnv(
 				fmt.Sprintf("I3_%s=%s", "NAME", event.Name),
 				fmt.Sprintf("I3_%s=%s", "INSTANCE", event.Instance),

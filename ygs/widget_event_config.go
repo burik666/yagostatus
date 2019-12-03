@@ -14,6 +14,7 @@ type WidgetEventConfig struct {
 	Instance     string   `yaml:"instance,omitempty"`
 	OutputFormat string   `yaml:"output_format,omitempty"`
 	Override     bool     `yaml:"override"`
+	WorkDir      string   `yaml:"workdir"`
 }
 
 // Validate checks event parameters.

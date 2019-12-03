@@ -24,6 +24,7 @@ type ExecWidgetParams struct {
 	EventsUpdate bool `yaml:"events_update"`
 	Signal       *int
 	OutputFormat executor.OutputFormat `yaml:"output_format"`
+	WorkDir      string
 }
 
 // ExecWidget implements the exec widget.
@@ -82,6 +83,8 @@ func (w *ExecWidget) exec() error {
 	if err != nil {
 		return err
 	}
+
+	exc.SetWD(w.params.WorkDir)
 
 	for k, v := range w.customfields {
 		exc.AddEnv(

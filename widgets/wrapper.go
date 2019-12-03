@@ -14,6 +14,7 @@ import (
 // WrapperWidgetParams are widget parameters.
 type WrapperWidgetParams struct {
 	Command string
+	WorkDir string
 }
 
 // WrapperWidget implements the wrapper of other status commands.
@@ -44,6 +45,8 @@ func NewWrapperWidget(params interface{}) (ygs.Widget, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	exc.SetWD(w.params.WorkDir)
 
 	w.exc = exc
 

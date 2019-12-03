@@ -41,6 +41,12 @@ WIDGET:
 			widget.WorkDir = workdir
 		}
 
+		for i := range widget.Events {
+			if widget.Events[i].WorkDir == "" {
+				widget.Events[i].WorkDir = workdir
+			}
+		}
+
 		// for backward compatibility
 		if itpl, ok := params["template"]; ok {
 			tpl, ok := itpl.(string)
@@ -140,6 +146,12 @@ WIDGET:
 				json.Unmarshal(tpls, &snipWidgetsConfig[i].Templates)
 
 				snipEvents := snipWidgetsConfig[i].Events
+				for i := range snipEvents {
+					if snipEvents[i].WorkDir == "" {
+						snipEvents[i].WorkDir = wd
+					}
+				}
+
 				for _, e := range widget.Events {
 					if e.Override {
 						sort.Strings(e.Modifiers)
@@ -164,6 +176,7 @@ WIDGET:
 						snipEvents = append(snipEvents, e)
 					}
 				}
+
 				snipWidgetsConfig[i].Events = snipEvents
 			}
 
