@@ -13,6 +13,7 @@ Yet Another i3status replacement written in Go.
 - Shell scripting widgets and events handlers.
 - Wrapping other status programs (i3status, py3status, conky, etc.).
 - Different widgets on different workspaces.
+- Snippets.
 - Templates for widgets outputs.
 - Update widget via http/websocket requests.
 - Update widget by POSIX Real-Time Signals (SIGRTMIN-SIGRTMAX).
@@ -145,6 +146,29 @@ Example:
       command: /usr/bin/chrome --incognito
       name: ch
 ```
+
+### Snippets
+
+Yagostatus supports the inclusion of snippets from files.
+```yml
+  - widget: $ygs/snip.yaml
+    msg: hello world
+    color: #00ff00
+```
+
+`ygs/snip.yaml`:
+```yml
+  - widget: static
+    blocks: >
+        [
+            {
+                "full_text": "message: ${msg}",
+                "color": "${color}"
+            }
+        ]
+```
+
+`ygs/snip.yaml` - relative path from the current file.
 
 
 ### Widget `clock`
