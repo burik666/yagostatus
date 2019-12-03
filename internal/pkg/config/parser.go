@@ -100,7 +100,11 @@ WIDGET:
 				wd = widget.WorkDir
 			}
 
-			filename := wd + "/" + widget.Name[1:]
+			filename := widget.Name[1:]
+			if !filepath.IsAbs(filename) {
+				filename = wd + "/" + filename
+			}
+
 			data, err := ioutil.ReadFile(filename)
 			if err != nil {
 				setError(widget, err, false)
