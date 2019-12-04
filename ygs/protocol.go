@@ -3,6 +3,7 @@ package ygs
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 )
 
 // I3BarHeader represents the header of an i3bar message.
@@ -96,4 +97,22 @@ func (b *I3BarBlock) Apply(tpl I3BarBlock) {
 	*b = tpl
 
 	json.Unmarshal(jb, b)
+}
+
+func (b I3BarBlock) Env(suffix string) []string {
+	env := make([]string, 0)
+	for k, v := range b.Custom {
+		env = append(env, fmt.Sprintf("I3_%s%s=%s", k, suffix, v))
+	}
+
+	ob, _ := json.Marshal(b)
+
+	var rawOutput map[string]Vary
+	json.Unmarshal(ob, &rawOutput)
+
+	for k, v := range rawOutput {
+		env = append(env, fmt.Sprintf("I3_%s%s=%s", k, suffix, v.String()))
+	}
+
+	return env
 }

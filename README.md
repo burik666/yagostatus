@@ -100,7 +100,8 @@ Example:
     * `modifiers` - List of X11 modifiers condition.
     * `command` - Command to execute (via `sh -c`).
     Сlick_event json will be written to stdin.
-    Also env variables are available: `$I3_NAME`, `$I3_INSTANCE`, `$I3_BUTTON`, `$I3_MODIFIERS`, `$I3_X`, `$I3_Y`, `$I3_RELATIVE_X`, `$I3_RELATIVE_Y`, `$I3_WIDTH`, `$I3_HEIGHT`, `$I3_MODIFIERS`. `$I3__` prefix for custom fields.
+    Also env variables are available: `$I3_NAME`, `$I3_INSTANCE`, `$I3_BUTTON`, `$I3_MODIFIERS`, `$I3_X`, `$I3_Y`, `$I3_RELATIVE_X`, `$I3_RELATIVE_Y`, `$I3_WIDTH`, `$I3_HEIGHT`, `$I3_MODIFIERS`.
+    The clicked widget fields are available as ENV variables with the prefix `I3_` (example:` $ I3_full_text`).
     * `workdir` - Set a working directory.
     * `output_format` - The command output format (none, text, json, auto) (default: `none`).
     * `name` - Filter by `name` for widgets with multiple blocks (default: empty).
@@ -192,7 +193,8 @@ This widget runs the command at the specified interval.
 - `output_format` - The command output format (none, text, json, auto) (default: `auto`).
 - `signal` - SIGRTMIN offset to update widget. Should be between 0 and `SIGRTMIN`-`SIGRTMAX`.
 
-Custom fields are available as ENV variables with the prefix `$I3__`.
+The current widget fields are available as ENV variables with the prefix `I3_` (example: `$I3_full_text`).
+For widgets with multiple blocks, an suffix with an index will be added. (example: `$I3_full_text`, `$I3_full_text_1`, `$I3_full_text_2`, etc.)
 
 Use pkill to send signals:
 

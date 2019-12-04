@@ -33,11 +33,11 @@ type ExecWidget struct {
 
 	params ExecWidgetParams
 
-	signal       os.Signal
-	c            chan<- []ygs.I3BarBlock
-	upd          chan struct{}
-	customfields map[string]ygs.Vary
-	tickerC      *chan struct{}
+	signal  os.Signal
+	c       chan<- []ygs.I3BarBlock
+	upd     chan struct{}
+	tickerC *chan struct{}
+	env     []string
 
 	outputWG sync.WaitGroup
 }
@@ -86,11 +86,7 @@ func (w *ExecWidget) exec() error {
 
 	exc.SetWD(w.params.WorkDir)
 
-	for k, v := range w.customfields {
-		exc.AddEnv(
-			fmt.Sprintf("I3_%s=%s", k, v),
-		)
-	}
+	exc.AddEnv(w.env...)
 
 	c := make(chan []ygs.I3BarBlock)
 
@@ -106,7 +102,7 @@ func (w *ExecWidget) exec() error {
 				return
 			}
 			w.c <- blocks
-			w.setCustomFields(blocks)
+			w.setEnv(blocks)
 		}
 	})()
 
@@ -189,7 +185,7 @@ func (w *ExecWidget) Run(c chan<- []ygs.I3BarBlock) error {
 
 // Event processes the widget events.
 func (w *ExecWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock) error {
-	w.setCustomFields(blocks)
+	w.setEnv(blocks)
 
 	if w.params.EventsUpdate {
 		w.upd <- struct{}{}
@@ -198,16 +194,18 @@ func (w *ExecWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock) e
 	return nil
 }
 
-func (w *ExecWidget) setCustomFields(blocks []ygs.I3BarBlock) {
-	customfields := make(map[string]ygs.Vary)
+func (w *ExecWidget) setEnv(blocks []ygs.I3BarBlock) {
+	env := make([]string, 0)
 
-	for _, block := range blocks {
-		for k, v := range block.Custom {
-			customfields[k] = v
+	for i, block := range blocks {
+		suffix := ""
+		if i > 0 {
+			suffix = fmt.Sprintf("_%d", i)
 		}
+		env = append(env, block.Env(suffix)...)
 	}
 
-	w.customfields = customfields
+	w.env = env
 }
 
 func (w *ExecWidget) resetTicker() {

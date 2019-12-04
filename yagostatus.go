@@ -120,12 +120,11 @@ func (status *YaGoStatus) processWidgetEvents(widgetIndex int, outputIndex int, 
 				fmt.Sprintf("I3_%s=%s", "MODIFIERS", strings.Join(event.Modifiers, ",")),
 			)
 
-			for k, v := range status.widgetsOutput[widgetIndex][outputIndex].Custom {
-				exc.AddEnv(
-					fmt.Sprintf("I3_%s=%s", k, v),
-				)
-			}
+			block := status.widgetsOutput[widgetIndex][outputIndex]
+			block.Name = event.Name
+			block.Instance = event.Instance
 
+			exc.AddEnv(block.Env("")...)
 			stdin, err := exc.Stdin()
 			if err != nil {
 				return err
