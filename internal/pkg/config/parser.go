@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -246,6 +247,13 @@ func replaceRecursive(v *reflect.Value, dict map[string]string) {
 		st := vv.String()
 		for s, r := range dict {
 			st = strings.ReplaceAll(st, s, r)
+		}
+
+		if n, err := strconv.ParseInt(st, 10, 64); err == nil {
+			vi := reflect.New(reflect.ValueOf(n).Type()).Elem()
+			vi.SetInt(n)
+			*v = vi
+			return
 		}
 
 		if vv.CanSet() {
