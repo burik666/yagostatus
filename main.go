@@ -3,13 +3,13 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/burik666/yagostatus/internal/pkg/config"
+	"github.com/burik666/yagostatus/internal/pkg/logger"
 )
 
 var builtinConfig = []byte(`
@@ -38,7 +38,7 @@ widgets:
 `)
 
 func main() {
-	log.SetFlags(log.Ldate + log.Ltime + log.Lshortfile)
+	logger := logger.New(log.Ldate + log.Ltime + log.Lshortfile)
 
 	var configFile string
 
@@ -49,7 +49,7 @@ func main() {
 	flag.Parse()
 
 	if *versionFlag {
-		fmt.Printf("YaGoStatus %s\n", Version)
+		logger.Infof("YaGoStatus %s", Version)
 		return
 	}
 
@@ -62,9 +62,10 @@ func main() {
 		if os.IsNotExist(cfgError) {
 			cfgError = nil
 
-			cfg, err = config.Parse(builtinConfig)
+			cfg, err = config.Parse(builtinConfig, "builtin")
 			if err != nil {
-				log.Fatalf("Failed to parse builtin config: %s", err)
+				logger.Errorf("Failed to parse builtin config: %s", err)
+				os.Exit(1)
 			}
 		}
 
@@ -78,13 +79,14 @@ func main() {
 		}
 	}
 
-	yaGoStatus, err := NewYaGoStatus(*cfg)
+	yaGoStatus, err := NewYaGoStatus(*cfg, logger)
 	if err != nil {
-		log.Fatalf("Failed to create yagostatus instance: %s", err)
+		logger.Errorf("Failed to create yagostatus instance: %s", err)
+		os.Exit(1)
 	}
 
 	if cfgError != nil {
-		log.Printf("Failed to load config: %s", cfgError)
+		logger.Errorf("Failed to load config: %s", cfgError)
 		yaGoStatus.errorWidget(cfgError.Error())
 	}
 
@@ -108,7 +110,7 @@ func main() {
 
 	go func() {
 		if err := yaGoStatus.Run(); err != nil {
-			log.Printf("Failed to run yagostatus: %s", err)
+			logger.Errorf("Failed to run yagostatus: %s", err)
 		}
 		shutdownsignals <- syscall.SIGTERM
 	}()
@@ -116,6 +118,8 @@ func main() {
 	<-shutdownsignals
 
 	if err := yaGoStatus.Shutdown(); err != nil {
-		log.Printf("Failed to shutdown yagostatus: %s", err)
+		logger.Errorf("Failed to shutdown yagostatus: %s", err)
 	}
+
+	logger.Infof("exit")
 }

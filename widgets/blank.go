@@ -2,6 +2,7 @@
 package widgets
 
 import (
+	"github.com/burik666/yagostatus/internal/pkg/logger"
 	"github.com/burik666/yagostatus/ygs"
 )
 
@@ -16,7 +17,7 @@ func init() {
 }
 
 // NewBlankWidget returns a new BlankWidget.
-func NewBlankWidget(params interface{}) (ygs.Widget, error) {
+func NewBlankWidget(params interface{}, wlogger logger.Logger) (ygs.Widget, error) {
 	return &BlankWidget{}, nil
 }
 

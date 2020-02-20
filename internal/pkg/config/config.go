@@ -25,14 +25,14 @@ func LoadFile(filename string) (*Config, error) {
 		return nil, err
 	}
 
-	return parse(data, filepath.Dir(filename))
+	return parse(data, filepath.Dir(filename), filepath.Base(filename))
 }
 
 // Parse parses config.
-func Parse(data []byte) (*Config, error) {
+func Parse(data []byte, source string) (*Config, error) {
 	wd, err := os.Getwd()
 	if err != nil {
 		return nil, err
 	}
-	return parse(data, wd)
+	return parse(data, wd, source)
 }

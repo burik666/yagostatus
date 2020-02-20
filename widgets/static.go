@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 
+	"github.com/burik666/yagostatus/internal/pkg/logger"
 	"github.com/burik666/yagostatus/ygs"
 )
 
@@ -26,7 +27,7 @@ func init() {
 }
 
 // NewStaticWidget returns a new StaticWidget.
-func NewStaticWidget(params interface{}) (ygs.Widget, error) {
+func NewStaticWidget(params interface{}, wlogger logger.Logger) (ygs.Widget, error) {
 	w := &StaticWidget{
 		params: params.(StaticWidgetParams),
 	}

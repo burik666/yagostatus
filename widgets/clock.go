@@ -3,6 +3,7 @@ package widgets
 import (
 	"time"
 
+	"github.com/burik666/yagostatus/internal/pkg/logger"
 	"github.com/burik666/yagostatus/ygs"
 )
 
@@ -27,7 +28,7 @@ func init() {
 }
 
 // NewClockWidget returns a new ClockWidget.
-func NewClockWidget(params interface{}) (ygs.Widget, error) {
+func NewClockWidget(params interface{}, wlogger logger.Logger) (ygs.Widget, error) {
 	w := &ClockWidget{
 		params: params.(ClockWidgetParams),
 	}

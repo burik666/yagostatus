@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net"
 	"net/http"
 	"sync"
 
+	"github.com/burik666/yagostatus/internal/pkg/logger"
 	"github.com/burik666/yagostatus/ygs"
 
 	"golang.org/x/net/websocket"
@@ -29,6 +29,8 @@ type HTTPWidget struct {
 	BlankWidget
 
 	params HTTPWidgetParams
+
+	logger logger.Logger
 
 	c        chan<- []ygs.I3BarBlock
 	instance *httpInstance
@@ -55,9 +57,10 @@ func init() {
 }
 
 // NewHTTPWidget returns a new HTTPWidget.
-func NewHTTPWidget(params interface{}) (ygs.Widget, error) {
+func NewHTTPWidget(params interface{}, wlogger logger.Logger) (ygs.Widget, error) {
 	w := &HTTPWidget{
 		params: params.(HTTPWidgetParams),
+		logger: wlogger,
 	}
 
 	if len(w.params.Listen) == 0 {
@@ -153,12 +156,12 @@ func (w *HTTPWidget) httpHandler(response http.ResponseWriter, request *http.Req
 	if request.Method == "POST" {
 		body, err := ioutil.ReadAll(request.Body)
 		if err != nil {
-			log.Printf("%s", err)
+			w.logger.Errorf("%s", err)
 		}
 
 		var messages []ygs.I3BarBlock
 		if err := json.Unmarshal(body, &messages); err != nil {
-			log.Printf("%s", err)
+			w.logger.Errorf("%s", err)
 			response.WriteHeader(http.StatusBadRequest)
 			fmt.Fprintf(response, "%s", err)
 		}
@@ -172,7 +175,7 @@ func (w *HTTPWidget) httpHandler(response http.ResponseWriter, request *http.Req
 
 	_, err := response.Write([]byte("bad request method, allow GET for websocket and POST for HTTP update"))
 	if err != nil {
-		log.Printf("failed to write response: %s", err)
+		w.logger.Errorf("failed to write response: %s", err)
 	}
 }
 
@@ -195,7 +198,7 @@ func (w *HTTPWidget) wsHandler(ws *websocket.Conn) {
 			}
 
 			if err := websocket.JSON.Send(ws, msg); err != nil {
-				log.Printf("failed to send msg: %s", err)
+				w.logger.Errorf("failed to send msg: %s", err)
 			}
 		}
 	}()
@@ -206,7 +209,7 @@ func (w *HTTPWidget) wsHandler(ws *websocket.Conn) {
 				break
 			}
 
-			log.Printf("invalid message: %s", err)
+			w.logger.Errorf("invalid message: %s", err)
 			break
 		}
 

@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/burik666/yagostatus/internal/pkg/executor"
+	"github.com/burik666/yagostatus/internal/pkg/logger"
 	"github.com/burik666/yagostatus/ygs"
 )
 
@@ -21,6 +22,8 @@ type WrapperWidgetParams struct {
 type WrapperWidget struct {
 	params WrapperWidgetParams
 
+	logger logger.Logger
+
 	exc   *executor.Executor
 	stdin io.WriteCloser
 
@@ -32,9 +35,10 @@ func init() {
 }
 
 // NewWrapperWidget returns a new WrapperWidget.
-func NewWrapperWidget(params interface{}) (ygs.Widget, error) {
+func NewWrapperWidget(params interface{}, wlogger logger.Logger) (ygs.Widget, error) {
 	w := &WrapperWidget{
 		params: params.(WrapperWidgetParams),
+		logger: wlogger,
 	}
 
 	if len(w.params.Command) == 0 {
@@ -64,7 +68,7 @@ func (w *WrapperWidget) Run(c chan<- []ygs.I3BarBlock) error {
 
 	defer w.stdin.Close()
 
-	err = w.exc.Run(c, executor.OutputFormatJSON)
+	err = w.exc.Run(w.logger, c, executor.OutputFormatJSON)
 	if err == nil {
 		err = errors.New("process exited unexpectedly")
 

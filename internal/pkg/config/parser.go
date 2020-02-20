@@ -17,7 +17,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func parse(data []byte, workdir string) (*Config, error) {
+func parse(data []byte, workdir string, source string) (*Config, error) {
 
 	config := Config{}
 	config.Signals.StopSignal = syscall.SIGUSR1
@@ -27,16 +27,21 @@ func parse(data []byte, workdir string) (*Config, error) {
 		return nil, trimYamlErr(err, false)
 	}
 
+	for wi := range config.Widgets {
+		config.Widgets[wi].File = source
+		config.Widgets[wi].Index = wi
+	}
+
 WIDGET:
-	for widgetIndex := 0; widgetIndex < len(config.Widgets); widgetIndex++ {
-		widget := &config.Widgets[widgetIndex]
+	for wi := 0; wi < len(config.Widgets); wi++ {
+		widget := &config.Widgets[wi]
 
 		params := make(map[string]interface{})
-		for k, v := range config.Widgets[widgetIndex].Params {
+		for k, v := range config.Widgets[wi].Params {
 			params[strings.ToLower(k)] = v
 		}
 
-		config.Widgets[widgetIndex].Params = params
+		config.Widgets[wi].Params = params
 
 		if widget.WorkDir == "" {
 			widget.WorkDir = workdir
@@ -147,6 +152,8 @@ WIDGET:
 			wd = filepath.Dir(filename)
 			for i := range snipWidgetsConfig {
 				snipWidgetsConfig[i].WorkDir = wd
+				snipWidgetsConfig[i].File = filename
+				snipWidgetsConfig[i].Index = i
 				snipWidgetsConfig[i].IncludeStack = append(widget.IncludeStack, widget.Name)
 				json.Unmarshal(tpls, &snipWidgetsConfig[i].Templates)
 
@@ -185,11 +192,11 @@ WIDGET:
 				snipWidgetsConfig[i].Events = snipEvents
 			}
 
-			i := widgetIndex
+			i := wi
 			config.Widgets = append(config.Widgets[:i], config.Widgets[i+1:]...)
 			config.Widgets = append(config.Widgets[:i], append(snipWidgetsConfig, config.Widgets[i:]...)...)
 
-			widgetIndex--
+			wi--
 
 			continue WIDGET
 		}

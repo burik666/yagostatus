@@ -3,7 +3,6 @@ package widgets
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"sync"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	"github.com/burik666/yagostatus/internal/pkg/executor"
+	"github.com/burik666/yagostatus/internal/pkg/logger"
 	"github.com/burik666/yagostatus/internal/pkg/signals"
 	"github.com/burik666/yagostatus/ygs"
 )
@@ -33,6 +33,8 @@ type ExecWidget struct {
 
 	params ExecWidgetParams
 
+	logger logger.Logger
+
 	signal  os.Signal
 	c       chan<- []ygs.I3BarBlock
 	upd     chan struct{}
@@ -47,9 +49,10 @@ func init() {
 }
 
 // NewExecWidget returns a new ExecWidget.
-func NewExecWidget(params interface{}) (ygs.Widget, error) {
+func NewExecWidget(params interface{}, wlogger logger.Logger) (ygs.Widget, error) {
 	w := &ExecWidget{
 		params: params.(ExecWidgetParams),
+		logger: wlogger,
 	}
 
 	if len(w.params.Command) == 0 {
@@ -106,7 +109,7 @@ func (w *ExecWidget) exec() error {
 		}
 	})()
 
-	err = exc.Run(c, w.params.OutputFormat)
+	err = exc.Run(w.logger, c, w.params.OutputFormat)
 	if err == nil {
 		if state := exc.ProcessState(); state != nil && state.ExitCode() != 0 {
 			if w.params.Retry != nil {
@@ -131,7 +134,7 @@ func (w *ExecWidget) Run(c chan<- []ygs.I3BarBlock) error {
 		err := w.exec()
 		if w.params.Silent {
 			if err != nil {
-				log.Print(err)
+				w.logger.Errorf("exec failed: %s", err)
 			}
 
 			return nil
@@ -176,7 +179,7 @@ func (w *ExecWidget) Run(c chan<- []ygs.I3BarBlock) error {
 				}}
 			}
 
-			log.Print(err)
+			w.logger.Errorf("exec failed: %s", err)
 		}
 	}
 

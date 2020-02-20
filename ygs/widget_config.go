@@ -11,6 +11,8 @@ type WidgetConfig struct {
 	Templates  []I3BarBlock        `yaml:"-"`
 	Events     []WidgetEventConfig `yaml:"events"`
 	WorkDir    string              `yaml:"-"`
+	Index      int                 `yaml:"-"`
+	File       string              `yaml:"-"`
 
 	Params map[string]interface{} `yaml:",inline"`
 

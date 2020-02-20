@@ -1,6 +1,7 @@
 package executor
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"io"
@@ -11,6 +12,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/burik666/yagostatus/internal/pkg/logger"
 	"github.com/burik666/yagostatus/ygs"
 )
 
@@ -37,7 +39,6 @@ func Exec(command string, args ...string) (*Executor, error) {
 	e := &Executor{}
 
 	e.cmd = exec.Command(name, args...)
-	e.cmd.Stderr = os.Stderr
 	e.cmd.Env = os.Environ()
 	e.cmd.SysProcAttr = &syscall.SysProcAttr{
 		Setpgid: true,
@@ -53,7 +54,21 @@ func (e *Executor) SetWD(wd string) {
 	}
 }
 
-func (e *Executor) Run(c chan<- []ygs.I3BarBlock, format OutputFormat) error {
+func (e *Executor) Run(logger logger.Logger, c chan<- []ygs.I3BarBlock, format OutputFormat) error {
+	stderr, err := e.cmd.StderrPipe()
+	if err != nil {
+		return err
+	}
+
+	go (func() {
+		scanner := bufio.NewScanner(stderr)
+		for scanner.Scan() {
+			logger.Errorf("(stderr) %s", scanner.Text())
+		}
+	})()
+
+	defer stderr.Close()
+
 	stdout, err := e.cmd.StdoutPipe()
 	if err != nil {
 		return err
@@ -157,7 +172,7 @@ func (e *Executor) AddEnv(env ...string) {
 }
 
 func (e *Executor) Wait() error {
-	if e.cmd != nil {
+	if e.cmd != nil && e.cmd.Process != nil {
 		return e.cmd.Wait()
 	}
 
