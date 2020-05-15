@@ -15,7 +15,14 @@ type Config struct {
 		StopSignal syscall.Signal `yaml:"stop"`
 		ContSignal syscall.Signal `yaml:"cont"`
 	} `yaml:"signals"`
-	Widgets []ygs.WidgetConfig `yaml:"widgets"`
+	Variables map[string]interface{} `yaml:"variables"`
+	Widgets   []ygs.WidgetConfig     `yaml:"widgets"`
+}
+
+// SnippetConfig represents the snippet configuration
+type SnippetConfig struct {
+	Variables map[string]interface{} `yaml:"variables"`
+	Widgets   []ygs.WidgetConfig     `yaml:"widgets"`
 }
 
 // LoadFile loads and parses config from file.

@@ -152,13 +152,17 @@ Example:
 
 Yagostatus supports the inclusion of snippets from files.
 ```yml
-  - widget: $ygs/snip.yaml
+  - widget: $ygs-snippets/snip.yaml
     msg: hello world
     color: #00ff00
 ```
 
-`ygs/snip.yaml`:
+`ygs-snippets/snip.yaml`:
 ```yml
+variables:
+  msg: "default messsage"
+  color: #ffffff
+widgets:
   - widget: static
     blocks: >
         [
@@ -169,7 +173,7 @@ Yagostatus supports the inclusion of snippets from files.
         ]
 ```
 
-`ygs/snip.yaml` - relative path from the current file.
+`ygs-snippets/snip.yaml` - relative path from the current file.
 
 
 ### Widget `clock`

@@ -13,6 +13,7 @@ type WidgetConfig struct {
 	WorkDir    string              `yaml:"-"`
 	Index      int                 `yaml:"-"`
 	File       string              `yaml:"-"`
+	Variables  map[string]string   `yaml:"variables"`
 
 	Params map[string]interface{} `yaml:",inline"`
 

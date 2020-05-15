@@ -32,6 +32,26 @@ func parse(data []byte, workdir string, source string) (*Config, error) {
 		config.Widgets[wi].Index = wi
 	}
 
+	dict := make(map[string]string, len(config.Variables))
+	for k, v := range config.Variables {
+		vb, err := json.Marshal(v)
+		if err != nil {
+			return nil, err
+		}
+
+		var vraw ygs.Vary
+
+		err = json.Unmarshal(vb, &vraw)
+		if err != nil {
+			return nil, err
+		}
+
+		dict[fmt.Sprintf("${%s}", k)] = strings.TrimRight(vraw.String(), "\n")
+	}
+
+	v := reflect.ValueOf(config.Widgets)
+	replaceRecursive(&v, dict)
+
 WIDGET:
 	for wi := 0; wi < len(config.Widgets); wi++ {
 		widget := &config.Widgets[wi]
@@ -58,6 +78,7 @@ WIDGET:
 			tpl, ok := itpl.(string)
 			if !ok {
 				setError(widget, fmt.Errorf("invalid template"), false)
+
 				continue WIDGET
 			}
 
@@ -75,6 +96,7 @@ WIDGET:
 			tpls, ok := itpls.(string)
 			if !ok {
 				setError(widget, fmt.Errorf("invalid templates"), false)
+
 				continue WIDGET
 			}
 
@@ -87,117 +109,15 @@ WIDGET:
 			delete(params, "templates")
 		}
 
-		tpls, _ := json.Marshal(widget.Templates)
+		ok, err := parseSnippet(&config, wi, params)
+		if err != nil {
+			setError(widget, err, false)
 
-		if len(widget.Name) > 0 && widget.Name[0] == '$' {
-			for i := range widget.IncludeStack {
-				if widget.Name == widget.IncludeStack[i] {
-					stack := append(widget.IncludeStack, widget.Name)
+			continue WIDGET
+		}
 
-					setError(widget, fmt.Errorf("recursive include: '%s'", strings.Join(stack, " -> ")), false)
-
-					continue WIDGET
-				}
-			}
-
-			wd := workdir
-
-			if widget.WorkDir != "" {
-				wd = widget.WorkDir
-			}
-
-			filename := widget.Name[1:]
-			if !filepath.IsAbs(filename) {
-				filename = wd + "/" + filename
-			}
-
-			data, err := ioutil.ReadFile(filename)
-			if err != nil {
-				setError(widget, err, false)
-
-				continue WIDGET
-			}
-
-			dict := make(map[string]string, len(params))
-			for k, v := range params {
-				vb, err := json.Marshal(v)
-				if err != nil {
-					setError(widget, err, false)
-
-					continue WIDGET
-				}
-
-				var vraw ygs.Vary
-
-				err = json.Unmarshal(vb, &vraw)
-				if err != nil {
-					setError(widget, err, true)
-
-					continue WIDGET
-				}
-
-				dict[fmt.Sprintf("${%s}", k)] = strings.TrimRight(vraw.String(), "\n")
-			}
-
-			var snipWidgetsConfig []ygs.WidgetConfig
-			if err := yaml.Unmarshal(data, &snipWidgetsConfig); err != nil {
-				setError(widget, err, false)
-
-				continue WIDGET
-			}
-
-			v := reflect.ValueOf(snipWidgetsConfig)
-			replaceRecursive(&v, dict)
-
-			wd = filepath.Dir(filename)
-			for i := range snipWidgetsConfig {
-				snipWidgetsConfig[i].WorkDir = wd
-				snipWidgetsConfig[i].File = filename
-				snipWidgetsConfig[i].Index = i
-				snipWidgetsConfig[i].IncludeStack = append(widget.IncludeStack, widget.Name)
-				json.Unmarshal(tpls, &snipWidgetsConfig[i].Templates)
-
-				snipEvents := snipWidgetsConfig[i].Events
-				for i := range snipEvents {
-					if snipEvents[i].WorkDir == "" {
-						snipEvents[i].WorkDir = wd
-					}
-				}
-
-				for _, e := range widget.Events {
-					if e.Override {
-						sort.Strings(e.Modifiers)
-
-						ne := make([]ygs.WidgetEventConfig, 0, len(snipEvents))
-
-						for _, se := range snipEvents {
-							sort.Strings(se.Modifiers)
-
-							if e.Button == se.Button &&
-								e.Name == se.Name &&
-								e.Instance == se.Instance &&
-								reflect.DeepEqual(e.Modifiers, se.Modifiers) {
-
-								continue
-							}
-
-							ne = append(ne, se)
-						}
-						snipEvents = append(ne, e)
-					} else {
-						snipEvents = append(snipEvents, e)
-					}
-				}
-
-				snipWidgetsConfig[i].Events = snipEvents
-			}
-
-			i := wi
-			config.Widgets = append(config.Widgets[:i], config.Widgets[i+1:]...)
-			config.Widgets = append(config.Widgets[:i], append(snipWidgetsConfig, config.Widgets[i:]...)...)
-
+		if ok {
 			wi--
-
 			continue WIDGET
 		}
 
@@ -209,6 +129,118 @@ WIDGET:
 	}
 
 	return &config, nil
+}
+
+func parseSnippet(config *Config, wi int, params map[string]interface{}) (bool, error) {
+	widget := config.Widgets[wi]
+
+	if len(widget.Name) > 0 && widget.Name[0] == '$' {
+		for i := range widget.IncludeStack {
+			if widget.Name == widget.IncludeStack[i] {
+				stack := append(widget.IncludeStack, widget.Name)
+
+				return false, fmt.Errorf("recursive include: '%s'", strings.Join(stack, " -> "))
+			}
+		}
+
+		wd := widget.WorkDir
+
+		filename := widget.Name[1:]
+		if !filepath.IsAbs(filename) {
+			filename = wd + "/" + filename
+		}
+
+		data, err := ioutil.ReadFile(filename)
+		if err != nil {
+			return false, err
+		}
+
+		var snippetConfig SnippetConfig
+		if err := yaml.Unmarshal(data, &snippetConfig); err != nil {
+			return false, err
+		}
+
+		for k, v := range snippetConfig.Variables {
+			if _, ok := params[k]; !ok {
+				params[k] = v
+			}
+		}
+
+		dict := make(map[string]string, len(params))
+		for k, v := range params {
+			if _, ok := snippetConfig.Variables[k]; !ok {
+				return false, fmt.Errorf("unknown variable '%s'", k)
+			}
+
+			vb, err := json.Marshal(v)
+			if err != nil {
+				return false, err
+			}
+
+			var vraw ygs.Vary
+
+			err = json.Unmarshal(vb, &vraw)
+			if err != nil {
+				return false, err
+			}
+
+			dict[fmt.Sprintf("${%s}", k)] = strings.TrimRight(vraw.String(), "\n")
+		}
+
+		v := reflect.ValueOf(snippetConfig.Widgets)
+		replaceRecursive(&v, dict)
+
+		tpls, _ := json.Marshal(widget.Templates)
+
+		wd = filepath.Dir(filename)
+		for i := range snippetConfig.Widgets {
+			snippetConfig.Widgets[i].WorkDir = wd
+			snippetConfig.Widgets[i].File = filename
+			snippetConfig.Widgets[i].Index = i
+			snippetConfig.Widgets[i].IncludeStack = append(widget.IncludeStack, widget.Name)
+			json.Unmarshal(tpls, &snippetConfig.Widgets[i].Templates)
+
+			snipEvents := snippetConfig.Widgets[i].Events
+			for i := range snipEvents {
+				if snipEvents[i].WorkDir == "" {
+					snipEvents[i].WorkDir = wd
+				}
+			}
+
+			for _, e := range widget.Events {
+				if e.Override {
+					sort.Strings(e.Modifiers)
+
+					ne := make([]ygs.WidgetEventConfig, 0, len(snipEvents))
+
+					for _, se := range snipEvents {
+						sort.Strings(se.Modifiers)
+
+						if e.Button == se.Button &&
+							e.Name == se.Name &&
+							e.Instance == se.Instance &&
+							reflect.DeepEqual(e.Modifiers, se.Modifiers) {
+
+							continue
+						}
+
+						ne = append(ne, se)
+					}
+					snipEvents = append(ne, e)
+				} else {
+					snipEvents = append(snipEvents, e)
+				}
+			}
+
+			snippetConfig.Widgets[i].Events = snipEvents
+		}
+
+		config.Widgets = append(config.Widgets[:wi], config.Widgets[wi+1:]...)
+		config.Widgets = append(config.Widgets[:wi], append(snippetConfig.Widgets, config.Widgets[wi:]...)...)
+
+		return true, nil
+	}
+	return false, nil
 }
 
 func setError(widget *ygs.WidgetConfig, err error, trimLineN bool) {
