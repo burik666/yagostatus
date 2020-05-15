@@ -33,7 +33,7 @@ widgets:
         [{
             "color": "#ffffff",
             "separator": true,
-            "separator_block_width": 20
+            "separator_block_width": 21
         }]
 `)
 

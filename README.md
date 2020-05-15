@@ -58,7 +58,7 @@ widgets:
         [{
             "color": "#ffffff",
             "separator": true,
-            "separator_block_width": 20
+            "separator_block_width": 21
         }]
 ```
 ## Widgets
@@ -311,7 +311,7 @@ bindsym XF86AudioMute exec amixer -q set Master toggle; exec pkill -SIGRTMIN+1 y
         [{
             "markup": "pango",
             "separator": true,
-            "separator_block_width": 20
+            "separator_block_width": 21
         }]
 ```
 
@@ -338,7 +338,7 @@ Requires [jq](https://stedolan.github.com/jq/) for json parsing.
     templates: >
         [{
             "separator": true,
-            "separator_block_width": 20
+            "separator_block_width": 21
         }]
 ```
 
@@ -394,16 +394,16 @@ conky.text = [[
 { ${lua_parse cpu cpu1} , "min_width": "100%", "align": "right", "separator": false },
 { ${lua_parse cpu cpu2} , "min_width": "100%", "align": "right", "separator": false },
 { ${lua_parse cpu cpu3} , "min_width": "100%", "align": "right", "separator": false },
-{ ${lua_parse cpu cpu4} , "min_width": "100%", "align": "right", "separator": true, "separator_block_width":20 },
+{ ${lua_parse cpu cpu4} , "min_width": "100%", "align": "right", "separator": true, "separator_block_width":21 },
 
 { "full_text": "RAM:", "color": "\#2e9ef4", "separator": false },
-{ "full_text": "${mem} / ${memeasyfree}", "color": ${if_match ${memperc}<80}"\#ffffff"${else}"\#ff0000"${endif}, "separator": true, "separator_block_width":20 },
+{ "full_text": "${mem} / ${memeasyfree}", "color": ${if_match ${memperc}<80}"\#ffffff"${else}"\#ff0000"${endif}, "separator": true, "separator_block_width":21 },
 
 { "full_text": "sda:", "color": "\#2e9ef4", "separator": false },
-{ "full_text": "▼ ${diskio_read sda} ▲ ${diskio_write sda}", "color": "\#ffffff", "separator": true, "separator_block_width":20 },
+{ "full_text": "▼ ${diskio_read sda} ▲ ${diskio_write sda}", "color": "\#ffffff", "separator": true, "separator_block_width":21 },
 
 { "full_text": "eth0:", "color": "\#2e9ef4", "separator": false },
-{ "full_text": "▼ ${downspeed eth0} ▲ ${upspeed eth0}", "color": "\#ffffff", "separator": true, "separator_block_width":20 }
+{ "full_text": "▼ ${downspeed eth0} ▲ ${upspeed eth0}", "color": "\#ffffff", "separator": true, "separator_block_width":21 }
 
 ]
 
