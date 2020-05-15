@@ -1,104 +1,146 @@
 package widgets
 
 import (
-	"bufio"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
-	"os"
-	"os/exec"
-	"regexp"
+	"syscall"
 
+	"github.com/burik666/yagostatus/internal/pkg/executor"
+	"github.com/burik666/yagostatus/internal/pkg/logger"
 	"github.com/burik666/yagostatus/ygs"
 )
 
+// WrapperWidgetParams are widget parameters.
+type WrapperWidgetParams struct {
+	Command string
+	WorkDir string
+}
+
 // WrapperWidget implements the wrapper of other status commands.
 type WrapperWidget struct {
-	stdin   io.WriteCloser
-	cmd     *exec.Cmd
-	command string
-	args    []string
+	params WrapperWidgetParams
+
+	logger logger.Logger
+
+	exc   *executor.Executor
+	stdin io.WriteCloser
+
+	eventBracketWritten bool
+}
+
+func init() {
+	ygs.RegisterWidget("wrapper", NewWrapperWidget, WrapperWidgetParams{})
 }
 
 // NewWrapperWidget returns a new WrapperWidget.
-func NewWrapperWidget(params map[string]interface{}) (ygs.Widget, error) {
-	w := &WrapperWidget{}
-
-	v, ok := params["command"]
-	if !ok {
-		return nil, errors.New("missing 'command' setting")
+func NewWrapperWidget(params interface{}, wlogger logger.Logger) (ygs.Widget, error) {
+	w := &WrapperWidget{
+		params: params.(WrapperWidgetParams),
+		logger: wlogger,
 	}
-	r := regexp.MustCompile("'.+'|\".+\"|\\S+")
-	m := r.FindAllString(v.(string), -1)
-	w.command = m[0]
-	w.args = m[1:]
+
+	if len(w.params.Command) == 0 {
+		return nil, errors.New("missing 'command'")
+	}
+
+	exc, err := executor.Exec(w.params.Command)
+	if err != nil {
+		return nil, err
+	}
+
+	exc.SetWD(w.params.WorkDir)
+
+	w.exc = exc
 
 	return w, nil
 }
 
 // Run starts the main loop.
 func (w *WrapperWidget) Run(c chan<- []ygs.I3BarBlock) error {
-	w.cmd = exec.Command(w.command, w.args...)
-	w.cmd.Stderr = os.Stderr
-	stdout, err := w.cmd.StdoutPipe()
+	var err error
+
+	w.stdin, err = w.exc.Stdin()
 	if err != nil {
 		return err
 	}
 
-	w.stdin, err = w.cmd.StdinPipe()
-	if err != nil {
-		return err
-	}
+	defer w.stdin.Close()
 
-	if err := w.cmd.Start(); err != nil {
-		return err
-	}
-	w.stdin.Write([]byte("["))
+	err = w.exc.Run(w.logger, c, executor.OutputFormatJSON)
+	if err == nil {
+		err = errors.New("process exited unexpectedly")
 
-	reader := bufio.NewReader(stdout)
-	decoder := json.NewDecoder(reader)
-
-	var firstMessage interface{}
-	if err := decoder.Decode(&firstMessage); err != nil {
-		return err
-	}
-	firstMessageData, _ := json.Marshal(firstMessage)
-
-	var header ygs.I3BarHeader
-	if err := json.Unmarshal(firstMessageData, &header); err == nil {
-		decoder.Token()
-	} else {
-		var blocks []ygs.I3BarBlock
-		if err := json.Unmarshal(firstMessageData, &blocks); err != nil {
-			return err
+		if state := w.exc.ProcessState(); state != nil {
+			return fmt.Errorf("%w: %s", err, state.String())
 		}
-		c <- blocks
 	}
 
-	for {
-		var blocks []ygs.I3BarBlock
-		err := decoder.Decode(&blocks)
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			return err
-		}
-		c <- blocks
-	}
-	return w.cmd.Wait()
+	return err
 }
 
 // Event processes the widget events.
-func (w *WrapperWidget) Event(event ygs.I3BarClickEvent) {
-	msg, _ := json.Marshal(event)
-	w.stdin.Write(msg)
-	w.stdin.Write([]byte(",\n"))
+func (w *WrapperWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock) error {
+	if w.stdin == nil {
+		return nil
+	}
+
+	if header := w.exc.I3BarHeader(); header != nil && header.ClickEvents {
+		if !w.eventBracketWritten {
+			w.eventBracketWritten = true
+			if _, err := w.stdin.Write([]byte("[")); err != nil {
+				return err
+			}
+		}
+
+		msg, err := json.Marshal(event)
+		if err != nil {
+			return err
+		}
+
+		msg = append(msg, []byte(",\n")...)
+
+		if _, err := w.stdin.Write(msg); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
-// Stop shutdowns the widget.
-func (w *WrapperWidget) Stop() {}
+// Stop stops the widdget.
+func (w *WrapperWidget) Stop() error {
+	if header := w.exc.I3BarHeader(); header != nil {
+		if header.StopSignal != 0 {
+			return w.exc.Signal(syscall.Signal(header.StopSignal))
+		}
+	}
 
-func init() {
-	ygs.RegisterWidget("wrapper", NewWrapperWidget)
+	return w.exc.Signal(syscall.SIGSTOP)
+}
+
+// Continue continues the widdget.
+func (w *WrapperWidget) Continue() error {
+	if header := w.exc.I3BarHeader(); header != nil {
+		if header.ContSignal != 0 {
+			return w.exc.Signal(syscall.Signal(header.ContSignal))
+		}
+	}
+
+	return w.exc.Signal(syscall.SIGCONT)
+}
+
+// Shutdown shutdowns the widget.
+func (w *WrapperWidget) Shutdown() error {
+	if w.exc != nil {
+		err := w.exc.Signal(syscall.SIGTERM)
+		if err != nil {
+			return err
+		}
+
+		return w.exc.Wait()
+	}
+
+	return nil
 }

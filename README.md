@@ -3,8 +3,6 @@ Yet Another i3status replacement written in Go.
 
 [![GitHub release](https://img.shields.io/github/release/burik666/yagostatus.svg)](https://github.com/burik666/yagostatus)
 [![GitHub license](https://img.shields.io/github/license/burik666/yagostatus.svg)](https://github.com/burik666/yagostatus/blob/master/LICENSE)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/fb1e1cbd0987425783c6ae30d5c5a833)](https://app.codacy.com/app/burik666/yagostatus?utm_source=github.com&utm_medium=referral&utm_content=burik666/yagostatus&utm_campaign=badger)
-[![Twitter](https://img.shields.io/twitter/url/https/github.com/burik666/yagostatus.svg?style=social)](https://twitter.com/intent/tweet?text=Yet%20Another%20i3status%20replacement%20written%20in%20Go.%0A&url=https%3A%2F%2Fgithub.com%2Fburik666%2Fyagostatus&hashtags=i3,i3wm,i3status,golang)
 
 
 [![yagostatus.gif](https://raw.githubusercontent.com/wiki/burik666/yagostatus/yagostatus.gif)](https://github.com/burik666/yagostatus/wiki/Conky)
@@ -15,26 +13,22 @@ Yet Another i3status replacement written in Go.
 - Shell scripting widgets and events handlers.
 - Wrapping other status programs (i3status, py3status, conky, etc.).
 - Different widgets on different workspaces.
+- [Snippets](https://github.com/burik666/ygs-snippets).
 - Templates for widgets outputs.
 - Update widget via http/websocket requests.
+- Update widget by POSIX Real-Time Signals (SIGRTMIN-SIGRTMAX).
 
 ## Installation
 
     go get github.com/burik666/yagostatus
     cp $GOPATH/src/github.com/burik666/yagostatus/yagostatus.yml ~/.config/i3/yagostatus.yml
 
-Get the absolute path to the yagostatus binary:
-
-    $ echo $GOPATH/bin/yagostatus
-    /home/burik/go/bin/yagostatus
-
-
-Replace `status_command` to `~/go/bin/yagostatus` in your i3 config file.
+Replace `status_command` to `~/go/bin/yagostatus --config ~/.config/i3/yagostatus.yml` in your i3 config file.
 
 ### Troubleshooting
 Yagostatus outputs error messages in stderr, you can log them by redirecting stderr to a file.
 
-`status_command ~/go/bin/yagostatus --config ~/.config/i3/yagostatus.yml 2> /tmp/yagostatus.log`
+`status_command exec ~/go/bin/yagostatus --config ~/.config/i3/yagostatus.yml 2> /tmp/yagostatus.log`
 
 ## Configuration
 
@@ -60,12 +54,12 @@ widgets:
 
   - widget: clock
     format: Jan _2 Mon 15:04:05 # https://golang.org/pkg/time/#Time.Format
-    template: >
-        {
+    templates: >
+        [{
             "color": "#ffffff",
             "separator": true,
-            "separator_block_width": 20
-        }
+            "separator_block_width": 21
+        }]
 ```
 ## Widgets
 
@@ -100,16 +94,19 @@ Example:
     ]
 ```
 
-- `template` - The template that is applied to the output of the widget.
+- `templates` - The templates that apply to widget blocks.
 - `events` - List of commands to be executed on user actions.
     * `button` - X11 button ID (0 for any, 1 to 3 for left/middle/right mouse button. 4/5 for mouse wheel up/down. Default: `0`).
     * `modifiers` - List of X11 modifiers condition.
     * `command` - Command to execute (via `sh -c`).
     Сlick_event json will be written to stdin.
     Also env variables are available: `$I3_NAME`, `$I3_INSTANCE`, `$I3_BUTTON`, `$I3_MODIFIERS`, `$I3_X`, `$I3_Y`, `$I3_RELATIVE_X`, `$I3_RELATIVE_Y`, `$I3_WIDTH`, `$I3_HEIGHT`, `$I3_MODIFIERS`.
-    * `output` - If `true` widget text will be replaced with the command output (default: `false`).
+    The clicked widget fields are available as ENV variables with the prefix `I3_` (example:` $ I3_full_text`).
+    * `workdir` - Set a working directory.
+    * `output_format` - The command output format (none, text, json, auto) (default: `none`).
     * `name` - Filter by `name` for widgets with multiple blocks (default: empty).
     * `instance` - Filter by `instance` for widgets with multiple blocks (default: empty).
+    * `override` - If `true`, previously defined events with the same `button`, `modifier`, `name` and `instance` will be ignored (default: `false`)
 
 Example:
 ```yml
@@ -125,10 +122,15 @@ Example:
             "name": "ch"
         }
     ]
-  template: >
-    {
-        "color": "#0000ff"
-    }
+  templates: >
+    [
+        {
+            "color": "#ff8000"
+        },
+        {
+            "color": "#ff3030"
+        }
+    ]
   events:
     - button: 1
       command: /usr/bin/firefox
@@ -146,6 +148,33 @@ Example:
       name: ch
 ```
 
+### Snippets
+
+Yagostatus supports the inclusion of snippets from files.
+```yml
+  - widget: $ygs-snippets/snip.yaml
+    msg: hello world
+    color: #00ff00
+```
+
+`ygs-snippets/snip.yaml`:
+```yml
+variables:
+  msg: "default messsage"
+  color: #ffffff
+widgets:
+  - widget: static
+    blocks: >
+        [
+            {
+                "full_text": "message: ${msg}",
+                "color": "${color}"
+            }
+        ]
+```
+
+`ygs-snippets/snip.yaml` - relative path from the current file.
+
 
 ### Widget `clock`
 
@@ -160,8 +189,20 @@ The clock widget returns the current time in the specified format.
 This widget runs the command at the specified interval.
 
 - `command` - Command to execute (via `sh -c`).
-- `interval` - Update interval in seconds (set 0 to run once at start).
+- `workdir` - Set a working directory.
+- `interval` - Update interval in seconds (`0` to run once at start; `-1` for loop without delay; default: `0`).
+- `retry` - Retry interval in seconds if command failed (default: none).
+- `silent` - Don't show error widget if command failed (default: `false`).
 - `events_update` - Update widget if an event occurred (default: `false`).
+- `output_format` - The command output format (none, text, json, auto) (default: `auto`).
+- `signal` - SIGRTMIN offset to update widget. Should be between 0 and `SIGRTMIN`-`SIGRTMAX`.
+
+The current widget fields are available as ENV variables with the prefix `I3_` (example: `$I3_full_text`).
+For widgets with multiple blocks, an suffix with an index will be added. (example: `$I3_full_text`, `$I3_full_text_1`, `$I3_full_text_2`, etc.)
+
+Use pkill to send signals:
+
+    pkill -SIGRTMIN+1 yagostatus
 
 
 ### Widget `wrapper`
@@ -170,6 +211,7 @@ The wrapper widget starts the command and proxy received blocks (and click_event
 See: https://i3wm.org/docs/i3bar-protocol.html
 
 - `command` - Command to execute.
+- `workdir` - Set a working directory.
 
 
 ### Widget `static`
@@ -183,22 +225,65 @@ The static widget renders the blocks. Useful for labels and buttons.
 
 The http widget starts http server and accept HTTP or Websocket requests.
 
-- `listen` - Address and port for binding (example: `localhost:9900`).
+- `network` - `tcp` or `unix` (default `tcp`).
+- `listen` - Hostname and port or path to the socket file to bind (example: `localhost:9900`, `/tmp/yagostatus.sock`).
 - `path` - Path for receiving requests (example: `/mystatus/`).
 Must be unique for multiple widgets with same `listen`.
 
 For example, you can update the widget with the following command:
 
-    curl http://localhost:9900/mystatus/  -d '[{"full_text": "hello"}, {"full_text": "world"}]'
+    curl http://localhost:9900/mystatus/ -d '[{"full_text": "hello"}, {"full_text": "world"}]'
 
 Send an empty array to clear:
 
-    curl http://localhost:9900/mystatus/  -d '[]'
+    curl http://localhost:9900/mystatus/ -d '[]'
+
+Unix socket:
+
+    curl --unix-socket /tmp/yagostatus.sock localhost/mystatus/ -d '[{"full_text": "hello"}]'
 
 
 ## Examples
 
+### Counter
+
+This example shows how you can use custom fields.
+
+- Left mouse button - increment
+- Right mouse button - decrement
+- Middle mouse button - reset
+
+```yml
+  - widget: static
+    blocks: >
+        [
+            {
+                "full_text":"COUNTER"
+            }
+        ]
+    events:
+      - command: |
+          printf '[{"full_text":"Counter: %d", "_count":%d}]' $((I3__COUNT + 1)) $((I3__COUNT + 1))
+        output_format: json
+        button: 1
+      - command: |
+          printf '[{"full_text":"Counter: %d", "_count":%d}]' $((I3__COUNT - 1)) $((I3__COUNT - 1))
+        output_format: json
+        button: 3
+      - command: |
+          printf '[{"full_text":"Counter: 0", "_count":0}]'
+        output_format: json
+        button: 2
+```
+
 ### Volume control
+i3 config:
+```
+bindsym XF86AudioLowerVolume exec amixer -c 1 -q set Master 1%-; exec pkill -SIGRTMIN+1 yagostatus
+bindsym XF86AudioRaiseVolume exec amixer -c 1 -q set Master 1%+; exec pkill -SIGRTMIN+1 yagostatus
+bindsym XF86AudioMute exec amixer -q set Master toggle; exec pkill -SIGRTMIN+1 yagostatus
+```
+
 ```yml
   - widget: exec
     command: |
@@ -210,6 +295,7 @@ Send an empty array to clear:
         echo -e '[{"full_text": "<span font_family=\"Symbola\">\xF0\x9F\x94\x8A</span> '${res[0]}'", "color": "'$color'"}]'
 
     interval: 0
+    signal: 1
     events_update: true
     events:
         - button: 1
@@ -221,12 +307,12 @@ Send an empty array to clear:
         - button: 5
           command: amixer -q set Master 3%-
 
-    template: >
-        {
+    templates: >
+        [{
             "markup": "pango",
             "separator": true,
-            "separator_block_width": 20
-        }
+            "separator_block_width": 21
+        }]
 ```
 
 ### Weather
@@ -249,11 +335,11 @@ Requires [jq](https://stedolan.github.com/jq/) for json parsing.
   - widget: exec
     command: curl -s 'http://api.openweathermap.org/data/2.5/weather?q=London,uk&units=metric&appid=<APPID>'|jq .main.temp
     interval: 300
-    template: >
-        {
+    templates: >
+        [{
             "separator": true,
-            "separator_block_width": 20
-        }
+            "separator_block_width": 21
+        }]
 ```
 
 ### Conky
@@ -308,16 +394,16 @@ conky.text = [[
 { ${lua_parse cpu cpu1} , "min_width": "100%", "align": "right", "separator": false },
 { ${lua_parse cpu cpu2} , "min_width": "100%", "align": "right", "separator": false },
 { ${lua_parse cpu cpu3} , "min_width": "100%", "align": "right", "separator": false },
-{ ${lua_parse cpu cpu4} , "min_width": "100%", "align": "right", "separator": true, "separator_block_width":20 },
+{ ${lua_parse cpu cpu4} , "min_width": "100%", "align": "right", "separator": true, "separator_block_width":21 },
 
 { "full_text": "RAM:", "color": "\#2e9ef4", "separator": false },
-{ "full_text": "${mem} / ${memeasyfree}", "color": ${if_match ${memperc}<80}"\#ffffff"${else}"\#ff0000"${endif}, "separator": true, "separator_block_width":20 },
+{ "full_text": "${mem} / ${memeasyfree}", "color": ${if_match ${memperc}<80}"\#ffffff"${else}"\#ff0000"${endif}, "separator": true, "separator_block_width":21 },
 
 { "full_text": "sda:", "color": "\#2e9ef4", "separator": false },
-{ "full_text": "▼ ${diskio_read sda} ▲ ${diskio_write sda}", "color": "\#ffffff", "separator": true, "separator_block_width":20 },
+{ "full_text": "▼ ${diskio_read sda} ▲ ${diskio_write sda}", "color": "\#ffffff", "separator": true, "separator_block_width":21 },
 
 { "full_text": "eth0:", "color": "\#2e9ef4", "separator": false },
-{ "full_text": "▼ ${downspeed eth0} ▲ ${upspeed eth0}", "color": "\#ffffff", "separator": true, "separator_block_width":20 }
+{ "full_text": "▼ ${downspeed eth0} ▲ ${upspeed eth0}", "color": "\#ffffff", "separator": true, "separator_block_width":21 }
 
 ]
 

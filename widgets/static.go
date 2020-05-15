@@ -4,24 +4,39 @@ import (
 	"encoding/json"
 	"errors"
 
+	"github.com/burik666/yagostatus/internal/pkg/logger"
 	"github.com/burik666/yagostatus/ygs"
 )
 
+// StaticWidgetParams are widget parameters.
+type StaticWidgetParams struct {
+	Blocks string
+}
+
 // StaticWidget implements a static widget.
 type StaticWidget struct {
+	BlankWidget
+
+	params StaticWidgetParams
+
 	blocks []ygs.I3BarBlock
 }
 
-// NewStaticWidget returns a new StaticWidget.
-func NewStaticWidget(params map[string]interface{}) (ygs.Widget, error) {
-	w := &StaticWidget{}
+func init() {
+	ygs.RegisterWidget("static", NewStaticWidget, StaticWidgetParams{})
+}
 
-	v, ok := params["blocks"]
-	if !ok {
-		return nil, errors.New("missing 'blocks' setting")
+// NewStaticWidget returns a new StaticWidget.
+func NewStaticWidget(params interface{}, wlogger logger.Logger) (ygs.Widget, error) {
+	w := &StaticWidget{
+		params: params.(StaticWidgetParams),
 	}
 
-	if err := json.Unmarshal([]byte(v.(string)), &w.blocks); err != nil {
+	if len(w.params.Blocks) == 0 {
+		return nil, errors.New("missing 'blocks'")
+	}
+
+	if err := json.Unmarshal([]byte(w.params.Blocks), &w.blocks); err != nil {
 		return nil, err
 	}
 
@@ -32,14 +47,4 @@ func NewStaticWidget(params map[string]interface{}) (ygs.Widget, error) {
 func (w *StaticWidget) Run(c chan<- []ygs.I3BarBlock) error {
 	c <- w.blocks
 	return nil
-}
-
-// Event processes the widget events.
-func (w *StaticWidget) Event(event ygs.I3BarClickEvent) {}
-
-// Stop shutdowns the widget.
-func (w *StaticWidget) Stop() {}
-
-func init() {
-	ygs.RegisterWidget("static", NewStaticWidget)
 }
