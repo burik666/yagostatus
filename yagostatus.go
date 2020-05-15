@@ -16,7 +16,7 @@ import (
 	_ "github.com/burik666/yagostatus/widgets"
 	"github.com/burik666/yagostatus/ygs"
 
-	"go.i3wm.org/i3"
+	"go.i3wm.org/i3/v4"
 )
 
 type widgetContainer struct {
