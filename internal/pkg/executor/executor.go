@@ -115,11 +115,14 @@ func (e *Executor) Run(logger logger.Logger, c chan<- []ygs.I3BarBlock, format O
 		}
 
 		if buf.Len() > 0 {
-			c <- []ygs.I3BarBlock{
-				{
-					FullText: strings.Trim(buf.String(), "\n "),
-				},
+			lines := strings.Split(strings.Trim(buf.String(), "\n"), "\n")
+			out := make([]ygs.I3BarBlock, len(lines))
+			for i := range lines {
+				out[i] = ygs.I3BarBlock{
+					FullText: strings.Trim(lines[i], "\n "),
+				}
 			}
+			c <- out
 		}
 
 		buf.Close()
