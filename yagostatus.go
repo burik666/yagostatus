@@ -2,10 +2,12 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"runtime/debug"
 	"strings"
 	"sync"
@@ -36,16 +38,38 @@ type YaGoStatus struct {
 	workspaces        []i3.Workspace
 	visibleWorkspaces []string
 
-	cfg config.Config
+	cfg  config.Config
+	sway bool
 
 	logger logger.Logger
 }
 
 // NewYaGoStatus returns a new YaGoStatus instance.
-func NewYaGoStatus(cfg config.Config, l logger.Logger) (*YaGoStatus, error) {
+func NewYaGoStatus(cfg config.Config, sway bool, l logger.Logger) (*YaGoStatus, error) {
 	status := &YaGoStatus{
 		cfg:    cfg,
+		sway:   sway,
 		logger: l,
+	}
+
+	if sway {
+		i3.SocketPathHook = func() (string, error) {
+			out, err := exec.Command("sway", "--get-socketpath").CombinedOutput()
+			if err != nil {
+				return "", fmt.Errorf("getting sway socketpath: %v (output: %s)", err, out)
+			}
+
+			return string(out), nil
+		}
+
+		i3.IsRunningHook = func() bool {
+			out, err := exec.Command("pgrep", "-c", "sway\\$").CombinedOutput()
+			if err != nil {
+				l.Errorf("sway running: %v (output: %s)", err, out)
+			}
+
+			return bytes.Compare(out, []byte("1")) == 0
+		}
 	}
 
 	for wi := range cfg.Widgets {

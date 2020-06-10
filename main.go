@@ -45,6 +45,7 @@ func main() {
 	flag.StringVar(&configFile, "config", "", `config file (default "yagostatus.yml")`)
 
 	versionFlag := flag.Bool("version", false, "print version information and exit")
+	swayFlag := flag.Bool("sway", false, "set it when using sway")
 
 	flag.Parse()
 
@@ -79,7 +80,7 @@ func main() {
 		}
 	}
 
-	yaGoStatus, err := NewYaGoStatus(*cfg, logger)
+	yaGoStatus, err := NewYaGoStatus(*cfg, *swayFlag, logger)
 	if err != nil {
 		logger.Errorf("Failed to create yagostatus instance: %s", err)
 		os.Exit(1)

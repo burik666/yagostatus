@@ -25,6 +25,8 @@ Yet Another i3status replacement written in Go.
 
 Replace `status_command` to `~/go/bin/yagostatus --config ~/.config/i3/yagostatus.yml` in your i3 config file.
 
+If you using Sway add the `--sway` parameter.
+
 ### Troubleshooting
 Yagostatus outputs error messages in stderr, you can log them by redirecting stderr to a file.
 
