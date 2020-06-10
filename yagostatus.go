@@ -295,7 +295,6 @@ func (status *YaGoStatus) Run() error {
 
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetEscapeHTML(false)
-	encoder.SetIndent("", "  ")
 
 	if err := encoder.Encode(ygs.I3BarHeader{
 		Version:     1,
