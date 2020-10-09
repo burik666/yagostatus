@@ -1,31 +1,38 @@
+---
 kind: pipeline
 name: default
 
+platform:
+  os: linux
+  arch: amd64
+
 steps:
+- name: deps
+  image: golang
+  commands:
+  - go mod download
+  volumes:
   - name: deps
-    image: golang
-    volumes:
-      - name: deps
-        path: /go
-    commands:
-      - go mod download
+    path: /go
 
-  - name: test
-    image: golang
-    volumes:
-      - name: deps
-        path: /go
-    commands:
-      - go test -v ./...
+- name: test
+  image: golang
+  commands:
+  - go test -v ./...
+  volumes:
+  - name: deps
+    path: /go
 
-  - name: build
-    image: golang
-    volumes:
-      - name: deps
-        path: /go
-    commands:
-      - go build -v
+- name: build
+  image: golang
+  commands:
+  - go build -v
+  volumes:
+  - name: deps
+    path: /go
 
 volumes:
-  - name: deps
-    temp: {}
+- name: deps
+  temp: {}
+
+...
