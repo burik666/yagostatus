@@ -1,0 +1,31 @@
+kind: pipeline
+name: default
+
+steps:
+  - name: deps
+    image: golang
+    volumes:
+      - name: deps
+        path: /go
+    commands:
+      - go mod download
+
+  - name: test
+    image: golang
+    volumes:
+      - name: deps
+        path: /go
+    commands:
+      - go test -v ./...
+
+  - name: build
+    image: golang
+    volumes:
+      - name: deps
+        path: /go
+    commands:
+      - go build -v
+
+volumes:
+  - name: deps
+    temp: {}

@@ -2,6 +2,7 @@
 Yet Another i3status replacement written in Go.
 
 [![GitHub release](https://img.shields.io/github/release/burik666/yagostatus.svg)](https://github.com/burik666/yagostatus)
+[![Build Status](https://cloud.drone.io/api/badges/burik666/yagostatus/status.svg)](https://cloud.drone.io/burik666/yagostatus)
 [![GitHub license](https://img.shields.io/github/license/burik666/yagostatus.svg)](https://github.com/burik666/yagostatus/blob/master/LICENSE)
 
 
