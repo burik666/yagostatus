@@ -2,6 +2,7 @@ package ygs
 
 import (
 	"errors"
+	"fmt"
 )
 
 // WidgetConfig represents a widget configuration.
@@ -28,7 +29,7 @@ func (c WidgetConfig) Validate() error {
 
 	for ei := range c.Events {
 		if err := c.Events[ei].Validate(); err != nil {
-			return err
+			return fmt.Errorf("events#%d: %s", ei+1, err)
 		}
 	}
 

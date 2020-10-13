@@ -25,6 +25,7 @@ type ExecWidgetParams struct {
 	Signal       *int
 	OutputFormat executor.OutputFormat `yaml:"output_format"`
 	WorkDir      string
+	Env          []string
 }
 
 // ExecWidget implements the exec widget.
@@ -90,6 +91,7 @@ func (w *ExecWidget) exec() error {
 	exc.SetWD(w.params.WorkDir)
 
 	exc.AddEnv(w.env...)
+	exc.AddEnv(w.params.Env...)
 
 	c := make(chan []ygs.I3BarBlock)
 

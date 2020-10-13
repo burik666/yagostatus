@@ -15,11 +15,20 @@ type WidgetEventConfig struct {
 	OutputFormat string   `yaml:"output_format,omitempty"`
 	Override     bool     `yaml:"override"`
 	WorkDir      string   `yaml:"workdir"`
+	Env          []string `yaml:"env"`
+
+	Params map[string]interface{} `yaml:",inline"`
 }
 
 // Validate checks event parameters.
 func (e *WidgetEventConfig) Validate() error {
 	var availableWidgetEventModifiers = [...]string{"Shift", "Control", "Mod1", "Mod2", "Mod3", "Mod4", "Mod5"}
+
+	if len(e.Params) > 0 {
+		for k := range e.Params {
+			return fmt.Errorf("unknown '%s' parameter", k)
+		}
+	}
 
 	for _, mod := range e.Modifiers {
 		found := false

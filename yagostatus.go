@@ -153,6 +153,8 @@ func (status *YaGoStatus) processWidgetEvents(wi int, outputIndex int, event ygs
 				fmt.Sprintf("I3_%s=%s", "MODIFIERS", strings.Join(event.Modifiers, ",")),
 			)
 
+			exc.AddEnv(widgetEvent.Env...)
+
 			block := status.widgets[wi].output[outputIndex]
 			block.Name = event.Name
 			block.Instance = event.Instance

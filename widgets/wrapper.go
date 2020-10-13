@@ -16,6 +16,7 @@ import (
 type WrapperWidgetParams struct {
 	Command string
 	WorkDir string
+	Env     []string
 }
 
 // WrapperWidget implements the wrapper of other status commands.
@@ -51,6 +52,8 @@ func NewWrapperWidget(params interface{}, wlogger logger.Logger) (ygs.Widget, er
 	}
 
 	exc.SetWD(w.params.WorkDir)
+
+	exc.AddEnv(w.params.Env...)
 
 	w.exc = exc
 
