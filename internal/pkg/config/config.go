@@ -17,9 +17,10 @@ type Config struct {
 	} `yaml:"signals"`
 	Variables map[string]interface{} `yaml:"variables"`
 	Widgets   []ygs.WidgetConfig     `yaml:"widgets"`
+	File      string                 `yaml:"-"`
 }
 
-// SnippetConfig represents the snippet configuration
+// SnippetConfig represents the snippet configuration.
 type SnippetConfig struct {
 	Variables map[string]interface{} `yaml:"variables"`
 	Widgets   []ygs.WidgetConfig     `yaml:"widgets"`
@@ -32,7 +33,14 @@ func LoadFile(filename string) (*Config, error) {
 		return nil, err
 	}
 
-	return parse(data, filepath.Dir(filename), filepath.Base(filename))
+	cfg, err := parse(data, filepath.Dir(filename), filepath.Base(filename))
+	if err != nil {
+		return nil, err
+	}
+
+	cfg.File = filename
+
+	return cfg, nil
 }
 
 // Parse parses config.
@@ -41,5 +49,13 @@ func Parse(data []byte, source string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	return parse(data, wd, source)
+
+	cfg, err := parse(data, wd, source)
+	if err != nil {
+		return nil, err
+	}
+
+	cfg.File = source
+
+	return cfg, nil
 }

@@ -3,6 +3,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -54,30 +55,15 @@ func main() {
 		return
 	}
 
-	var cfg *config.Config
+	cfg, cfgError := loadConfig(configFile)
+	if cfgError != nil {
+		logger.Errorf("Failed to load config: %s", cfgError)
+	}
 
-	var cfgError, err error
-
-	if configFile == "" {
-		cfg, cfgError = config.LoadFile("yagostatus.yml")
-		if os.IsNotExist(cfgError) {
-			cfgError = nil
-
-			cfg, err = config.Parse(builtinConfig, "builtin")
-			if err != nil {
-				logger.Errorf("Failed to parse builtin config: %s", err)
-				os.Exit(1)
-			}
-		}
-
-		if cfgError != nil {
-			cfg = &config.Config{}
-		}
+	if cfg != nil {
+		logger.Infof("using config: %s", cfg.File)
 	} else {
-		cfg, cfgError = config.LoadFile(configFile)
-		if cfgError != nil {
-			cfg = &config.Config{}
-		}
+		cfg = &config.Config{}
 	}
 
 	yaGoStatus, err := NewYaGoStatus(*cfg, *swayFlag, logger)
@@ -87,7 +73,6 @@ func main() {
 	}
 
 	if cfgError != nil {
-		logger.Errorf("Failed to load config: %s", cfgError)
 		yaGoStatus.errorWidget(cfgError.Error())
 	}
 
@@ -123,4 +108,27 @@ func main() {
 	}
 
 	logger.Infof("exit")
+}
+
+func loadConfig(configFile string) (*config.Config, error) {
+	if configFile == "" {
+		configDir, err := os.UserConfigDir()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get config dir: %s", err)
+		}
+
+		cfg, err := config.LoadFile(configDir + "/yagostatus/yagostatus.yml")
+		if os.IsNotExist(err) {
+			cfg, err := config.LoadFile("yagostatus.yml")
+			if os.IsNotExist(err) {
+				return config.Parse(builtinConfig, "builtin")
+			}
+
+			return cfg, err
+		}
+
+		return cfg, err
+	}
+
+	return config.LoadFile(configFile)
 }

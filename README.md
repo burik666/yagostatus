@@ -22,18 +22,21 @@ Yet Another i3status replacement written in Go.
 ## Installation
 
     go get github.com/burik666/yagostatus
-    cp $GOPATH/src/github.com/burik666/yagostatus/yagostatus.yml ~/.config/i3/yagostatus.yml
+    mkdir ~/.config/yagostatus
+    cp $GOPATH/src/github.com/burik666/yagostatus/yagostatus.yml ~/.config/yagostatus/yagostatus.yml
 
-Replace `status_command` to `~/go/bin/yagostatus --config ~/.config/i3/yagostatus.yml` in your i3 config file.
+Replace `status_command` to `~/go/bin/yagostatus --config ~/.config/yagostatus/yagostatus.yml` in your i3 config file.
 
 If you using Sway add the `--sway` parameter.
 
 ### Troubleshooting
 Yagostatus outputs error messages in stderr, you can log them by redirecting stderr to a file.
 
-`status_command exec ~/go/bin/yagostatus --config ~/.config/i3/yagostatus.yml 2> /tmp/yagostatus.log`
+`status_command exec ~/go/bin/yagostatus --config /path/to/yagostatus.yml 2> /tmp/yagostatus.log`
 
 ## Configuration
+
+If `--config` is not specified, yagostatus is looking for `yagostatus.yml` in `$HOME/.config/yagostatus` (or `$XDG_HOME_CONFIG/yagostatus` if set) or in the current working directory.
 
 Yagostatus uses a configuration file in the yaml format.
 
