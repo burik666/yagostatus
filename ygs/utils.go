@@ -38,7 +38,7 @@ func RegisterWidget(name string, newFunc newWidgetFunc, defaultParams interface{
 }
 
 // NewWidget creates new widget by name.
-func NewWidget(widgetConfig WidgetConfig, wlogger logger.Logger) (Widget, error) {
+func NewWidget(widgetConfig WidgetConfig, wLogger logger.Logger) (Widget, error) {
 	name := widgetConfig.Name
 	widget, ok := registeredWidgets[name]
 	if !ok {
@@ -69,7 +69,7 @@ func NewWidget(widgetConfig WidgetConfig, wlogger logger.Logger) (Widget, error)
 		}
 	}
 
-	return widget.newFunc(pe.Interface(), wlogger)
+	return widget.newFunc(pe.Interface(), wLogger)
 }
 
 // ErrorWidget creates new widget with error message.
@@ -86,7 +86,7 @@ func ErrorWidget(text string) WidgetConfig {
 		Params: map[string]interface{}{
 			"blocks": string(blocks),
 		},
-		File: "bultin",
+		File: "builtin",
 	}
 
 }

@@ -96,7 +96,7 @@ func (b *I3BarBlock) Apply(tpl I3BarBlock) {
 	jb, _ := json.Marshal(b)
 	*b = tpl
 
-	json.Unmarshal(jb, b)
+	_ = json.Unmarshal(jb, b)
 }
 
 func (b I3BarBlock) Env(suffix string) []string {
@@ -108,7 +108,7 @@ func (b I3BarBlock) Env(suffix string) []string {
 	ob, _ := json.Marshal(b)
 
 	var rawOutput map[string]Vary
-	json.Unmarshal(ob, &rawOutput)
+	_ = json.Unmarshal(ob, &rawOutput)
 
 	for k, v := range rawOutput {
 		env = append(env, fmt.Sprintf("I3_%s%s=%s", k, suffix, v.String()))

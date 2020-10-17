@@ -41,15 +41,15 @@ func (b *I3BarBlock) ToVaryMap() map[string]Vary {
 
 	varyMap := make(map[string]Vary)
 
-	json.Unmarshal(tmp, &varyMap)
+	_ = json.Unmarshal(tmp, &varyMap)
 
 	return varyMap
 }
 
 func parseBlock(block interface{}, custom map[string]Vary, data []byte, strict bool) error {
-	var jfields map[string]Vary
+	var jfFields map[string]Vary
 
-	if err := json.Unmarshal(data, &jfields); err != nil {
+	if err := json.Unmarshal(data, &jfFields); err != nil {
 		return err
 	}
 
@@ -68,7 +68,7 @@ func parseBlock(block interface{}, custom map[string]Vary, data []byte, strict b
 		}
 	}
 
-	for k, v := range jfields {
+	for k, v := range jfFields {
 		f, ok := fieldsByJSONTag[k]
 		if !ok {
 			if len(k) == 0 {
@@ -148,7 +148,7 @@ func parseBlock(block interface{}, custom map[string]Vary, data []byte, strict b
 				}
 			}
 		default:
-			panic("unsuported type")
+			panic("unsupported type")
 		}
 
 		f.Set(val)

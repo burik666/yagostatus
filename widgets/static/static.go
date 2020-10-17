@@ -1,9 +1,9 @@
-package widgets
+package static
 
 import (
 	"encoding/json"
 	"errors"
-
+	"github.com/burik666/yagostatus/widgets/blank"
 	"github.com/burik666/yagostatus/internal/pkg/logger"
 	"github.com/burik666/yagostatus/ygs"
 )
@@ -15,12 +15,13 @@ type StaticWidgetParams struct {
 
 // StaticWidget implements a static widget.
 type StaticWidget struct {
-	BlankWidget
-
+	blank.Widget
 	params StaticWidgetParams
 
 	blocks []ygs.I3BarBlock
 }
+
+var _ ygs.Widget = &StaticWidget{}
 
 func init() {
 	ygs.RegisterWidget("static", NewStaticWidget, StaticWidgetParams{})

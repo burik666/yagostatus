@@ -1,4 +1,4 @@
-package widgets
+package wrapper
 
 import (
 	"encoding/json"
@@ -29,6 +29,8 @@ type WrapperWidget struct {
 
 	eventBracketWritten bool
 }
+
+var _ ygs.Widget = &WrapperWidget{}
 
 func init() {
 	ygs.RegisterWidget("wrapper", NewWrapperWidget, WrapperWidgetParams{})
@@ -109,7 +111,7 @@ func (w *WrapperWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock
 	return nil
 }
 
-// Stop stops the widdget.
+// Stop stops the widget.
 func (w *WrapperWidget) Stop() error {
 	if header := w.exc.I3BarHeader(); header != nil {
 		if header.StopSignal != 0 {
@@ -120,7 +122,7 @@ func (w *WrapperWidget) Stop() error {
 	return w.exc.Signal(syscall.SIGSTOP)
 }
 
-// Continue continues the widdget.
+// Continue continues the widget.
 func (w *WrapperWidget) Continue() error {
 	if header := w.exc.I3BarHeader(); header != nil {
 		if header.ContSignal != 0 {

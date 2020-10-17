@@ -1,10 +1,11 @@
-package widgets
+package http
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/burik666/yagostatus/widgets/blank"
 	"io"
 	"io/ioutil"
 	"net"
@@ -24,9 +25,11 @@ type HTTPWidgetParams struct {
 	Path    string
 }
 
+var _ ygs.Widget = &HTTPWidget{}
+
 // HTTPWidget implements the http server widget.
 type HTTPWidget struct {
-	BlankWidget
+	blank.Widget
 
 	params HTTPWidgetParams
 

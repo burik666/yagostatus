@@ -106,17 +106,17 @@ func main() {
 		}
 	}()
 
-	shutdownsignals := make(chan os.Signal, 1)
-	signal.Notify(shutdownsignals, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	shutdownSignals := make(chan os.Signal, 1)
+	signal.Notify(shutdownSignals, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
 	go func() {
 		if err := yaGoStatus.Run(); err != nil {
 			logger.Errorf("Failed to run yagostatus: %s", err)
 		}
-		shutdownsignals <- syscall.SIGTERM
+		shutdownSignals <- syscall.SIGTERM
 	}()
 
-	<-shutdownsignals
+	<-shutdownSignals
 
 	if err := yaGoStatus.Shutdown(); err != nil {
 		logger.Errorf("Failed to shutdown yagostatus: %s", err)

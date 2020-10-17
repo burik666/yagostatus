@@ -1,8 +1,9 @@
-package widgets
+package exec
 
 import (
 	"errors"
 	"fmt"
+	"github.com/burik666/yagostatus/widgets/blank"
 	"os"
 	"os/signal"
 	"sync"
@@ -29,7 +30,7 @@ type ExecWidgetParams struct {
 
 // ExecWidget implements the exec widget.
 type ExecWidget struct {
-	BlankWidget
+	blank.Widget
 
 	params ExecWidgetParams
 
@@ -43,6 +44,8 @@ type ExecWidget struct {
 
 	outputWG sync.WaitGroup
 }
+
+var _ ygs.Widget = &ExecWidget{}
 
 func init() {
 	ygs.RegisterWidget("exec", NewExecWidget, ExecWidgetParams{})
