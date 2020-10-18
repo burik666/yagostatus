@@ -9,5 +9,6 @@ import (
 	_ "github.com/burik666/yagostatus/widgets/http"
 	_ "github.com/burik666/yagostatus/widgets/static"
 	_ "github.com/burik666/yagostatus/widgets/weather"
+	_ "github.com/burik666/yagostatus/widgets/wifi"
 	_ "github.com/burik666/yagostatus/widgets/wrapper"
 )
