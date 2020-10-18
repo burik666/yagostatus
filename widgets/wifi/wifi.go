@@ -1,4 +1,4 @@
-package clock
+package wifi
 
 import (
 	"github.com/burik666/yagostatus/widgets/blank"
