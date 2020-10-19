@@ -226,8 +226,8 @@ func weatherEmoji(icon int) string {
 	}
 
 	if icon >= 700 && icon < 800 {
-		//
-		return "❓"
+		// Fog
+		return "🌫️"
 	}
 
 	if icon >= 800 && icon < 900 {
