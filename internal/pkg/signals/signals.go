@@ -1,15 +1,9 @@
+// +build !cgo
+
 package signals
 
-// #include <signal.h>
-import "C"
-
 // SIGRTMIN signal
-var SIGRTMIN int
+var SIGRTMIN int = 34
 
 // SIGRTMAX signal
-var SIGRTMAX int
-
-func init() {
-	SIGRTMIN = int(C.int(C.SIGRTMIN))
-	SIGRTMAX = int(C.int(C.SIGRTMAX))
-}
+var SIGRTMAX int = 64
