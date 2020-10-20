@@ -48,7 +48,7 @@ func (w *Widget) getBattery() string {
 		return "N/A"
 	}
 
-	if w.params.Index > len(batteries) || w.params.Index < 0 {
+	if w.params.Index >= len(batteries) || w.params.Index < 0 {
 		w.params.logger.Errorf(
 			"invalid battery index provided, detected %d batteries",
 			len(batteries),
@@ -92,6 +92,8 @@ func getStateEmoji(batt *battery.Battery) string {
 		return "🔋"
 	case battery.Empty:
 		return "😥"
+	case battery.NotCharging:
+		return "❌"
 	case battery.Unknown:
 		return "❓"
 	}

@@ -2,6 +2,8 @@ module github.com/burik666/yagostatus
 
 go 1.14
 
+replace github.com/distatus/battery v0.10.0 => github.com/denysvitali/battery v0.10.1-0.20201020174607-42f7f0067437
+
 require (
 	github.com/BurntSushi/xgb v0.0.0-20200324125942-20f126ea2843 // indirect
 	github.com/BurntSushi/xgbutil v0.0.0-20190907113008-ad855c713046 // indirect
