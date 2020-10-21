@@ -7,10 +7,13 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"path"
+	"plugin"
 	"syscall"
 
 	"github.com/burik666/yagostatus/internal/pkg/config"
 	"github.com/burik666/yagostatus/internal/pkg/logger"
+	"github.com/burik666/yagostatus/ygs"
 )
 
 var builtinConfig = []byte(`
@@ -64,6 +67,11 @@ func main() {
 		logger.Infof("using config: %s", cfg.File)
 	} else {
 		cfg = &config.Config{}
+	}
+
+	if err := loadPlugins(*cfg, logger); err != nil {
+		logger.Errorf("Failed to load plugins: %s", err)
+		os.Exit(1)
 	}
 
 	yaGoStatus, err := NewYaGoStatus(*cfg, *swayFlag, logger)
@@ -131,4 +139,21 @@ func loadConfig(configFile string) (*config.Config, error) {
 	}
 
 	return config.LoadFile(configFile)
+}
+
+func loadPlugins(cfg config.Config, logger ygs.Logger) error {
+	for _, fname := range cfg.Plugins.Load {
+		if !path.IsAbs(fname) {
+			fname = path.Join(cfg.Plugins.Path, fname)
+		}
+
+		logger.Infof("Load plugin: %s", fname)
+
+		_, err := plugin.Open(fname)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
