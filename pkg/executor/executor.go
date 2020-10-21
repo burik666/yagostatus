@@ -79,7 +79,9 @@ func (e *Executor) Run(logger ygs.Logger, c chan<- []ygs.I3BarBlock, format Outp
 		return err
 	}
 
-	defer e.Wait()
+	defer func() {
+		_ = e.Wait()
+	}()
 
 	if format == OutputFormatNone {
 		return nil
@@ -116,6 +118,7 @@ func (e *Executor) Run(logger ygs.Logger, c chan<- []ygs.I3BarBlock, format Outp
 		if buf.Len() > 0 {
 			lines := strings.Split(strings.Trim(buf.String(), "\n"), "\n")
 			out := make([]ygs.I3BarBlock, len(lines))
+
 			for i := range lines {
 				out[i] = ygs.I3BarBlock{
 					FullText: strings.Trim(lines[i], "\n "),

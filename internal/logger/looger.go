@@ -21,7 +21,7 @@ type stdLogger struct {
 
 func (l stdLogger) Outputf(calldepth int, subprefix string, format string, v ...interface{}) {
 	st := l.prefix + subprefix + fmt.Sprintf(format, v...)
-	l.std.Output(calldepth+1, st)
+	_ = l.std.Output(calldepth+1, st)
 }
 
 func (l stdLogger) Infof(format string, v ...interface{}) {
@@ -38,5 +38,6 @@ func (l stdLogger) Debugf(format string, v ...interface{}) {
 
 func (l stdLogger) WithPrefix(prefix string) ygs.Logger {
 	l.prefix = prefix + " "
+
 	return &l
 }

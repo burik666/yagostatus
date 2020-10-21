@@ -22,7 +22,7 @@ type WidgetEventConfig struct {
 
 // Validate checks event parameters.
 func (e *WidgetEventConfig) Validate() error {
-	var availableWidgetEventModifiers = [...]string{"Shift", "Control", "Mod1", "Mod2", "Mod3", "Mod4", "Mod5"}
+	availableWidgetEventModifiers := [...]string{"Shift", "Control", "Mod1", "Mod2", "Mod3", "Mod4", "Mod5"}
 
 	if len(e.Params) > 0 {
 		for k := range e.Params {
@@ -37,6 +37,7 @@ func (e *WidgetEventConfig) Validate() error {
 		for _, m := range availableWidgetEventModifiers {
 			if mod == m {
 				found = true
+
 				break
 			}
 		}

@@ -18,7 +18,6 @@ import (
 )
 
 func parse(data []byte, workdir string, source string) (*Config, error) {
-
 	config := Config{}
 	config.Signals.StopSignal = syscall.SIGUSR1
 	config.Signals.ContSignal = syscall.SIGCONT
@@ -33,6 +32,7 @@ func parse(data []byte, workdir string, source string) (*Config, error) {
 	}
 
 	dict := make(map[string]string, len(config.Variables))
+
 	for k, v := range config.Variables {
 		vb, err := json.Marshal(v)
 		if err != nil {
@@ -118,6 +118,7 @@ WIDGET:
 
 		if ok {
 			wi--
+
 			continue WIDGET
 		}
 
@@ -167,6 +168,7 @@ func parseSnippet(config *Config, wi int, params map[string]interface{}) (bool, 
 		}
 
 		dict := make(map[string]string, len(params))
+
 		for k, v := range params {
 			if _, ok := snippetConfig.Variables[k]; !ok {
 				return false, fmt.Errorf("unknown variable '%s'", k)
@@ -193,12 +195,14 @@ func parseSnippet(config *Config, wi int, params map[string]interface{}) (bool, 
 		tpls, _ := json.Marshal(widget.Templates)
 
 		wd = filepath.Dir(filename)
+
 		for i := range snippetConfig.Widgets {
 			snippetConfig.Widgets[i].WorkDir = wd
 			snippetConfig.Widgets[i].File = filename
 			snippetConfig.Widgets[i].Index = i
+			//nolint:gocritic
 			snippetConfig.Widgets[i].IncludeStack = append(widget.IncludeStack, widget.Name)
-			json.Unmarshal(tpls, &snippetConfig.Widgets[i].Templates)
+			_ = json.Unmarshal(tpls, &snippetConfig.Widgets[i].Templates)
 
 			snipEvents := snippetConfig.Widgets[i].Events
 			for i := range snipEvents {
@@ -220,12 +224,12 @@ func parseSnippet(config *Config, wi int, params map[string]interface{}) (bool, 
 							e.Name == se.Name &&
 							e.Instance == se.Instance &&
 							reflect.DeepEqual(e.Modifiers, se.Modifiers) {
-
 							continue
 						}
 
 						ne = append(ne, se)
 					}
+					//nolint:gocritic
 					snipEvents = append(ne, e)
 				} else {
 					snipEvents = append(snipEvents, e)
@@ -240,6 +244,7 @@ func parseSnippet(config *Config, wi int, params map[string]interface{}) (bool, 
 
 		return true, nil
 	}
+
 	return false, nil
 }
 
@@ -250,6 +255,7 @@ func setError(widget *WidgetConfig, err error, trimLineN bool) {
 func trimYamlErr(err error, trimLineN bool) error {
 	msg := strings.TrimPrefix(err.Error(), "yaml: ")
 	msg = strings.TrimPrefix(msg, "unmarshal errors:\n  ")
+
 	if trimLineN {
 		msg = strings.TrimPrefix(msg, "line ")
 		msg = strings.TrimLeft(msg, "1234567890: ")
@@ -292,6 +298,7 @@ func replaceRecursive(v *reflect.Value, dict map[string]string) {
 			vi := reflect.New(reflect.ValueOf(n).Type()).Elem()
 			vi.SetInt(n)
 			*v = vi
+
 			return
 		}
 

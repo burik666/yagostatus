@@ -99,6 +99,7 @@ func (w *ExecWidget) exec() error {
 	defer close(c)
 
 	w.outputWG.Add(1)
+
 	go (func() {
 		defer w.outputWG.Done()
 
@@ -208,6 +209,7 @@ func (w *ExecWidget) setEnv(blocks []ygs.I3BarBlock) {
 		if i > 0 {
 			suffix = fmt.Sprintf("_%d", i)
 		}
+
 		env = append(env, block.Env(suffix)...)
 	}
 

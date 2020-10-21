@@ -5,8 +5,8 @@ package signals
 // #include <signal.h>
 import "C"
 
-// SIGRTMIN signal
-var SIGRTMIN int = int(C.int(C.SIGRTMIN))
+// SIGRTMIN signal.
+var SIGRTMIN int = int(C.SIGRTMIN)
 
-// SIGRTMAX signal
-var SIGRTMAX int = int(C.int(C.SIGRTMAX))
+// SIGRTMAX signal.
+var SIGRTMAX int = int(C.SIGRTMAX)

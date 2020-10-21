@@ -47,5 +47,6 @@ func NewStaticWidget(params interface{}, wlogger ygs.Logger) (ygs.Widget, error)
 // Run returns configured blocks.
 func (w *StaticWidget) Run(c chan<- []ygs.I3BarBlock) error {
 	c <- w.blocks
+
 	return nil
 }

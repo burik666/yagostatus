@@ -4,9 +4,7 @@ import (
 	"sync"
 )
 
-var (
-	m sync.Map
-)
+var m sync.Map
 
 func Store(key, value interface{}) {
 	m.Store(key, value)

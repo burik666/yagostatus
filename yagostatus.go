@@ -12,8 +12,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/burik666/yagostatus/internal/pkg/config"
-	"github.com/burik666/yagostatus/internal/pkg/registry"
+	"github.com/burik666/yagostatus/internal/config"
+	"github.com/burik666/yagostatus/internal/registry"
 	"github.com/burik666/yagostatus/pkg/executor"
 	_ "github.com/burik666/yagostatus/widgets"
 	"github.com/burik666/yagostatus/ygs"
@@ -45,7 +45,7 @@ type YaGoStatus struct {
 }
 
 // NewYaGoStatus returns a new YaGoStatus instance.
-func NewYaGoStatus(cfg config.Config, sway bool, l ygs.Logger) (*YaGoStatus, error) {
+func NewYaGoStatus(cfg config.Config, sway bool, l ygs.Logger) *YaGoStatus {
 	status := &YaGoStatus{
 		cfg:    cfg,
 		sway:   sway,
@@ -68,7 +68,7 @@ func NewYaGoStatus(cfg config.Config, sway bool, l ygs.Logger) (*YaGoStatus, err
 				l.Errorf("sway running: %v (output: %s)", err, out)
 			}
 
-			return bytes.Compare(out, []byte("1")) == 0
+			return bytes.Equal(out, []byte("1"))
 		}
 	}
 
@@ -76,7 +76,7 @@ func NewYaGoStatus(cfg config.Config, sway bool, l ygs.Logger) (*YaGoStatus, err
 		status.addWidget(cfg.Widgets[wi])
 	}
 
-	return status, nil
+	return status
 }
 
 func (status *YaGoStatus) errorWidget(text string) {
@@ -160,6 +160,7 @@ func (status *YaGoStatus) processWidgetEvents(wi int, outputIndex int, event ygs
 			block.Instance = event.Instance
 
 			exc.AddEnv(block.Env("")...)
+
 			stdin, err := exc.Stdin()
 			if err != nil {
 				return err
@@ -198,17 +199,15 @@ func (status *YaGoStatus) processWidgetEvents(wi int, outputIndex int, event ygs
 
 func (status *YaGoStatus) addWidgetOutput(wi int, blocks []ygs.I3BarBlock) {
 	output := make([]ygs.I3BarBlock, len(blocks))
-
 	tplc := len(status.widgets[wi].config.Templates)
+
 	for blockIndex := range blocks {
 		block := blocks[blockIndex]
 
 		if tplc == 1 {
 			block.Apply(status.widgets[wi].config.Templates[0])
-		} else {
-			if blockIndex < tplc {
-				block.Apply(status.widgets[wi].config.Templates[blockIndex])
-			}
+		} else if blockIndex < tplc {
+			block.Apply(status.widgets[wi].config.Templates[blockIndex])
 		}
 
 		block.Name = fmt.Sprintf("yagostatus-%d-%s", wi, block.Name)
@@ -309,6 +308,7 @@ func (status *YaGoStatus) Run() error {
 					}}
 				}
 			})()
+
 			if err := status.widgets[wi].instance.Run(status.widgets[wi].ch); err != nil {
 				status.widgets[wi].logger.Errorf("Widget done: %s", err)
 				status.widgets[wi].ch <- []ygs.I3BarBlock{{
@@ -336,6 +336,7 @@ func (status *YaGoStatus) Run() error {
 	go func() {
 		for range status.upd {
 			var result []ygs.I3BarBlock
+
 			for wi := range status.widgets {
 				if checkWorkspaceConditions(status.widgets[wi].config.Workspaces, status.visibleWorkspaces) {
 					result = append(result, status.widgets[wi].output...)
@@ -347,8 +348,8 @@ func (status *YaGoStatus) Run() error {
 			}
 
 			fmt.Print(",")
-			err := encoder.Encode(result)
-			if err != nil {
+
+			if err := encoder.Encode(result); err != nil {
 				status.logger.Errorf("Failed to encode result: %s", err)
 			}
 		}
@@ -358,7 +359,7 @@ func (status *YaGoStatus) Run() error {
 }
 
 // Shutdown shutdowns widgets and main loop.
-func (status *YaGoStatus) Shutdown() error {
+func (status *YaGoStatus) Shutdown() {
 	var wg sync.WaitGroup
 
 	for wi := range status.widgets {
@@ -372,6 +373,7 @@ func (status *YaGoStatus) Shutdown() error {
 					debug.PrintStack()
 				}
 			})()
+
 			if err := status.widgets[wi].instance.Shutdown(); err != nil {
 				status.widgets[wi].logger.Errorf("Failed to shutdown widget: %s", err)
 			}
@@ -379,8 +381,6 @@ func (status *YaGoStatus) Shutdown() error {
 	}
 
 	wg.Wait()
-
-	return nil
 }
 
 // Stop stops widgets and main loop.
@@ -393,6 +393,7 @@ func (status *YaGoStatus) Stop() {
 					debug.PrintStack()
 				}
 			})()
+
 			if err := status.widgets[wi].instance.Stop(); err != nil {
 				status.widgets[wi].logger.Errorf("Failed to stop widget: %s", err)
 			}
@@ -410,6 +411,7 @@ func (status *YaGoStatus) Continue() {
 					debug.PrintStack()
 				}
 			})()
+
 			if err := status.widgets[wi].instance.Continue(); err != nil {
 				status.widgets[wi].logger.Errorf("Failed to continue widget: %s", err)
 			}
@@ -447,6 +449,7 @@ func checkModifiers(conditions []string, values []string) bool {
 		for _, v := range values {
 			if c == v {
 				found = true
+
 				break
 			}
 		}
@@ -479,6 +482,7 @@ func checkWorkspaceConditions(conditions []string, values []string) bool {
 		for _, v := range values {
 			if c == v {
 				found = true
+
 				break
 			}
 		}

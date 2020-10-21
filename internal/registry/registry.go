@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/burik666/yagostatus/internal/pkg/config"
-	rs "github.com/burik666/yagostatus/internal/pkg/registry/store"
+	"github.com/burik666/yagostatus/internal/config"
+	rs "github.com/burik666/yagostatus/internal/registry/store"
 	"github.com/burik666/yagostatus/ygs"
 	"gopkg.in/yaml.v2"
 )

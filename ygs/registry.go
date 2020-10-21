@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	rs "github.com/burik666/yagostatus/internal/pkg/registry/store"
+	rs "github.com/burik666/yagostatus/internal/registry/store"
 )
 
 type RegistryWidget struct {

@@ -2,8 +2,8 @@
 
 package signals
 
-// SIGRTMIN signal
+// SIGRTMIN signal.
 var SIGRTMIN int = 34
 
-// SIGRTMAX signal
+// SIGRTMAX signal.
 var SIGRTMAX int = 64

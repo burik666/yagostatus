@@ -78,6 +78,7 @@ func NewHTTPWidget(params interface{}, wlogger ygs.Logger) (ygs.Widget, error) {
 
 	instanceKey := w.params.Listen
 	instance, ok := instances[instanceKey]
+
 	if ok {
 		if _, ok := instance.paths[w.params.Path]; ok {
 			return nil, fmt.Errorf("path '%s' already in use", w.params.Path)
@@ -101,6 +102,7 @@ func NewHTTPWidget(params interface{}, wlogger ygs.Logger) (ygs.Widget, error) {
 	instance.paths[instanceKey] = struct{}{}
 
 	w.clients = make(map[*websocket.Conn]chan interface{})
+
 	return w, nil
 }
 
@@ -211,6 +213,7 @@ func (w *HTTPWidget) wsHandler(ws *websocket.Conn) {
 			}
 
 			w.logger.Errorf("invalid message: %s", err)
+
 			break
 		}
 

@@ -11,8 +11,8 @@ import (
 	"plugin"
 	"syscall"
 
-	"github.com/burik666/yagostatus/internal/pkg/config"
-	"github.com/burik666/yagostatus/internal/pkg/logger"
+	"github.com/burik666/yagostatus/internal/config"
+	"github.com/burik666/yagostatus/internal/logger"
 	"github.com/burik666/yagostatus/ygs"
 )
 
@@ -55,6 +55,7 @@ func main() {
 
 	if *versionFlag {
 		logger.Infof("YaGoStatus %s", Version)
+
 		return
 	}
 
@@ -74,11 +75,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	yaGoStatus, err := NewYaGoStatus(*cfg, *swayFlag, logger)
-	if err != nil {
-		logger.Errorf("Failed to create yagostatus instance: %s", err)
-		os.Exit(1)
-	}
+	yaGoStatus := NewYaGoStatus(*cfg, *swayFlag, logger)
 
 	if cfgError != nil {
 		yaGoStatus.errorWidget(cfgError.Error())
@@ -111,9 +108,7 @@ func main() {
 
 	<-shutdownsignals
 
-	if err := yaGoStatus.Shutdown(); err != nil {
-		logger.Errorf("Failed to shutdown yagostatus: %s", err)
-	}
+	yaGoStatus.Shutdown()
 
 	logger.Infof("exit")
 }
