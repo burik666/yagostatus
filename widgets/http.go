@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/burik666/yagostatus/internal/pkg/logger"
 	"github.com/burik666/yagostatus/ygs"
 
 	"golang.org/x/net/websocket"
@@ -26,11 +25,11 @@ type HTTPWidgetParams struct {
 
 // HTTPWidget implements the http server widget.
 type HTTPWidget struct {
-	BlankWidget
+	ygs.BlankWidget
 
 	params HTTPWidgetParams
 
-	logger logger.Logger
+	logger ygs.Logger
 
 	c        chan<- []ygs.I3BarBlock
 	instance *httpInstance
@@ -49,15 +48,17 @@ type httpInstance struct {
 var instances map[string]*httpInstance
 
 func init() {
-	ygs.RegisterWidget("http", NewHTTPWidget, HTTPWidgetParams{
+	if err := ygs.RegisterWidget("http", NewHTTPWidget, HTTPWidgetParams{
 		Network: "tcp",
-	})
+	}); err != nil {
+		panic(err)
+	}
 
 	instances = make(map[string]*httpInstance, 1)
 }
 
 // NewHTTPWidget returns a new HTTPWidget.
-func NewHTTPWidget(params interface{}, wlogger logger.Logger) (ygs.Widget, error) {
+func NewHTTPWidget(params interface{}, wlogger ygs.Logger) (ygs.Widget, error) {
 	w := &HTTPWidget{
 		params: params.(HTTPWidgetParams),
 		logger: wlogger,

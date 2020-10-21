@@ -211,7 +211,7 @@ func parseSnippet(config *Config, wi int, params map[string]interface{}) (bool, 
 				if e.Override {
 					sort.Strings(e.Modifiers)
 
-					ne := make([]ygs.WidgetEventConfig, 0, len(snipEvents))
+					ne := make([]WidgetEventConfig, 0, len(snipEvents))
 
 					for _, se := range snipEvents {
 						sort.Strings(se.Modifiers)
@@ -243,8 +243,8 @@ func parseSnippet(config *Config, wi int, params map[string]interface{}) (bool, 
 	return false, nil
 }
 
-func setError(widget *ygs.WidgetConfig, err error, trimLineN bool) {
-	*widget = ygs.ErrorWidget(trimYamlErr(err, trimLineN).Error())
+func setError(widget *WidgetConfig, err error, trimLineN bool) {
+	*widget = ErrorWidget(trimYamlErr(err, trimLineN).Error())
 }
 
 func trimYamlErr(err error, trimLineN bool) error {

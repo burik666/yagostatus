@@ -4,16 +4,11 @@ import (
 	"fmt"
 	"log"
 	"os"
+
+	"github.com/burik666/yagostatus/ygs"
 )
 
-type Logger interface {
-	Infof(format string, v ...interface{})
-	Errorf(format string, v ...interface{})
-	Debugf(format string, v ...interface{})
-	WithPrefix(prefix string) Logger
-}
-
-func New(flags int) Logger {
+func New(flags int) ygs.Logger {
 	return &stdLogger{
 		std: log.New(os.Stderr, "", flags),
 	}
@@ -41,7 +36,7 @@ func (l stdLogger) Debugf(format string, v ...interface{}) {
 	l.Outputf(2, "DEBUG ", format, v...)
 }
 
-func (l stdLogger) WithPrefix(prefix string) Logger {
+func (l stdLogger) WithPrefix(prefix string) ygs.Logger {
 	l.prefix = prefix + " "
 	return &l
 }

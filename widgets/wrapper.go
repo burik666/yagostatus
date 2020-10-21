@@ -7,8 +7,7 @@ import (
 	"io"
 	"syscall"
 
-	"github.com/burik666/yagostatus/internal/pkg/executor"
-	"github.com/burik666/yagostatus/internal/pkg/logger"
+	"github.com/burik666/yagostatus/pkg/executor"
 	"github.com/burik666/yagostatus/ygs"
 )
 
@@ -21,9 +20,11 @@ type WrapperWidgetParams struct {
 
 // WrapperWidget implements the wrapper of other status commands.
 type WrapperWidget struct {
+	ygs.BlankWidget
+
 	params WrapperWidgetParams
 
-	logger logger.Logger
+	logger ygs.Logger
 
 	exc   *executor.Executor
 	stdin io.WriteCloser
@@ -32,11 +33,13 @@ type WrapperWidget struct {
 }
 
 func init() {
-	ygs.RegisterWidget("wrapper", NewWrapperWidget, WrapperWidgetParams{})
+	if err := ygs.RegisterWidget("wrapper", NewWrapperWidget, WrapperWidgetParams{}); err != nil {
+		panic(err)
+	}
 }
 
 // NewWrapperWidget returns a new WrapperWidget.
-func NewWrapperWidget(params interface{}, wlogger logger.Logger) (ygs.Widget, error) {
+func NewWrapperWidget(params interface{}, wlogger ygs.Logger) (ygs.Widget, error) {
 	w := &WrapperWidget{
 		params: params.(WrapperWidgetParams),
 		logger: wlogger,

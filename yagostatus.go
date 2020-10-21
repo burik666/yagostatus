@@ -13,8 +13,8 @@ import (
 	"sync"
 
 	"github.com/burik666/yagostatus/internal/pkg/config"
-	"github.com/burik666/yagostatus/internal/pkg/executor"
-	"github.com/burik666/yagostatus/internal/pkg/logger"
+	"github.com/burik666/yagostatus/internal/pkg/registry"
+	"github.com/burik666/yagostatus/pkg/executor"
 	_ "github.com/burik666/yagostatus/widgets"
 	"github.com/burik666/yagostatus/ygs"
 
@@ -24,9 +24,9 @@ import (
 type widgetContainer struct {
 	instance ygs.Widget
 	output   []ygs.I3BarBlock
-	config   ygs.WidgetConfig
+	config   config.WidgetConfig
 	ch       chan []ygs.I3BarBlock
-	logger   logger.Logger
+	logger   ygs.Logger
 }
 
 // YaGoStatus is the main struct.
@@ -41,11 +41,11 @@ type YaGoStatus struct {
 	cfg  config.Config
 	sway bool
 
-	logger logger.Logger
+	logger ygs.Logger
 }
 
 // NewYaGoStatus returns a new YaGoStatus instance.
-func NewYaGoStatus(cfg config.Config, sway bool, l logger.Logger) (*YaGoStatus, error) {
+func NewYaGoStatus(cfg config.Config, sway bool, l ygs.Logger) (*YaGoStatus, error) {
 	status := &YaGoStatus{
 		cfg:    cfg,
 		sway:   sway,
@@ -80,10 +80,10 @@ func NewYaGoStatus(cfg config.Config, sway bool, l logger.Logger) (*YaGoStatus, 
 }
 
 func (status *YaGoStatus) errorWidget(text string) {
-	status.addWidget(ygs.ErrorWidget(text))
+	status.addWidget(config.ErrorWidget(text))
 }
 
-func (status *YaGoStatus) addWidget(wcfg ygs.WidgetConfig) {
+func (status *YaGoStatus) addWidget(wcfg config.WidgetConfig) {
 	wlogger := status.logger.WithPrefix(fmt.Sprintf("[%s#%d]", wcfg.File, wcfg.Index+1))
 
 	(func() {
@@ -95,7 +95,7 @@ func (status *YaGoStatus) addWidget(wcfg ygs.WidgetConfig) {
 			}
 		})()
 
-		widget, err := ygs.NewWidget(wcfg, wlogger)
+		widget, err := registry.NewWidget(wcfg, wlogger)
 		if err != nil {
 			wlogger.Errorf("Failed to create widget: %s", err)
 			status.errorWidget(err.Error())

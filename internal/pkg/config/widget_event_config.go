@@ -1,4 +1,4 @@
-package ygs
+package config
 
 import (
 	"fmt"

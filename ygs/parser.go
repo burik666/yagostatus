@@ -41,7 +41,7 @@ func (b *I3BarBlock) ToVaryMap() map[string]Vary {
 
 	varyMap := make(map[string]Vary)
 
-	json.Unmarshal(tmp, &varyMap)
+	_ = json.Unmarshal(tmp, &varyMap)
 
 	return varyMap
 }
@@ -84,75 +84,81 @@ func parseBlock(block interface{}, custom map[string]Vary, data []byte, strict b
 			continue
 		}
 
-		var val reflect.Value
-
-		if f.Type().Kind() == reflect.Ptr {
-			val = reflect.New(f.Type().Elem())
-		} else {
-			val = reflect.New(f.Type()).Elem()
+		if err := convertFieldValue(f, k, v, strict); err != nil {
+			return err
 		}
-
-		sv := string(v)
-
-		switch reflect.Indirect(val).Kind() {
-		case reflect.String:
-			s, err := strconv.Unquote(sv)
-			if strict && err != nil {
-				return fmt.Errorf("invalid value for %s (string): %s", k, sv)
-			} else {
-				if err != nil {
-					s = sv
-				}
-			}
-
-			reflect.Indirect(val).SetString(s)
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			s := sv
-			if !strict {
-				s = strings.Trim(sv, "\"")
-			}
-
-			if n, err := strconv.ParseInt(s, 10, 64); err == nil {
-				reflect.Indirect(val).SetInt(n)
-			} else {
-				return fmt.Errorf("invalid value for %s (int): %s", k, sv)
-			}
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-			s := sv
-			if !strict {
-				s = strings.Trim(sv, "\"")
-			}
-
-			if n, err := strconv.ParseUint(s, 10, 64); err == nil {
-				reflect.Indirect(val).SetUint(n)
-			} else {
-				return fmt.Errorf("invalid value for %s (uint): %s", k, sv)
-			}
-
-		case reflect.Bool:
-			if strict {
-				switch sv {
-				case "true":
-					reflect.Indirect(val).SetBool(true)
-				case "false":
-					reflect.Indirect(val).SetBool(false)
-				default:
-					return fmt.Errorf("invalid value for %s: %s", k, sv)
-				}
-			} else {
-				s := strings.Trim(strings.ToLower(sv), "\"")
-				if s == "false" || s == "0" || s == "f" {
-					reflect.Indirect(val).SetBool(false)
-				} else {
-					reflect.Indirect(val).SetBool(true)
-				}
-			}
-		default:
-			panic("unsuported type")
-		}
-
-		f.Set(val)
 	}
+
+	return nil
+}
+
+func convertFieldValue(f reflect.Value, k string, v Vary, strict bool) error {
+	var val reflect.Value
+
+	if f.Type().Kind() == reflect.Ptr {
+		val = reflect.New(f.Type().Elem())
+	} else {
+		val = reflect.New(f.Type()).Elem()
+	}
+
+	sv := string(v)
+
+	switch reflect.Indirect(val).Kind() {
+	case reflect.String:
+		s, err := strconv.Unquote(sv)
+		if strict && err != nil {
+			return fmt.Errorf("invalid value for %s (string): %s", k, sv)
+		} else if err != nil {
+			s = sv
+		}
+
+		reflect.Indirect(val).SetString(s)
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		s := sv
+		if !strict {
+			s = strings.Trim(sv, "\"")
+		}
+
+		if n, err := strconv.ParseInt(s, 10, 64); err == nil {
+			reflect.Indirect(val).SetInt(n)
+		} else {
+			return fmt.Errorf("invalid value for %s (int): %s", k, sv)
+		}
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		s := sv
+		if !strict {
+			s = strings.Trim(sv, "\"")
+		}
+
+		if n, err := strconv.ParseUint(s, 10, 64); err == nil {
+			reflect.Indirect(val).SetUint(n)
+		} else {
+			return fmt.Errorf("invalid value for %s (uint): %s", k, sv)
+		}
+
+	case reflect.Bool:
+		if strict {
+			switch sv {
+			case "true":
+				reflect.Indirect(val).SetBool(true)
+			case "false":
+				reflect.Indirect(val).SetBool(false)
+			default:
+				return fmt.Errorf("invalid value for %s: %s", k, sv)
+			}
+		} else {
+			s := strings.Trim(strings.ToLower(sv), "\"")
+			if s == "false" || s == "0" || s == "f" {
+				reflect.Indirect(val).SetBool(false)
+			} else {
+				reflect.Indirect(val).SetBool(true)
+			}
+		}
+	default:
+		panic("unsuported type")
+	}
+
+	f.Set(val)
 
 	return nil
 }

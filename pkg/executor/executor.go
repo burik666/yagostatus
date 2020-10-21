@@ -12,7 +12,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/burik666/yagostatus/internal/pkg/logger"
 	"github.com/burik666/yagostatus/ygs"
 )
 
@@ -54,7 +53,7 @@ func (e *Executor) SetWD(wd string) {
 	}
 }
 
-func (e *Executor) Run(logger logger.Logger, c chan<- []ygs.I3BarBlock, format OutputFormat) error {
+func (e *Executor) Run(logger ygs.Logger, c chan<- []ygs.I3BarBlock, format OutputFormat) error {
 	stderr, err := e.cmd.StderrPipe()
 	if err != nil {
 		return err

@@ -1,15 +1,17 @@
-package ygs
+package config
 
 import (
 	"errors"
 	"fmt"
+
+	"github.com/burik666/yagostatus/ygs"
 )
 
 // WidgetConfig represents a widget configuration.
 type WidgetConfig struct {
 	Name       string              `yaml:"widget"`
 	Workspaces []string            `yaml:"workspaces"`
-	Templates  []I3BarBlock        `yaml:"-"`
+	Templates  []ygs.I3BarBlock    `yaml:"-"`
 	Events     []WidgetEventConfig `yaml:"events"`
 	WorkDir    string              `yaml:"-"`
 	Index      int                 `yaml:"-"`

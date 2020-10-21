@@ -9,9 +9,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/burik666/yagostatus/internal/pkg/executor"
-	"github.com/burik666/yagostatus/internal/pkg/logger"
-	"github.com/burik666/yagostatus/internal/pkg/signals"
+	"github.com/burik666/yagostatus/pkg/executor"
+	"github.com/burik666/yagostatus/pkg/signals"
 	"github.com/burik666/yagostatus/ygs"
 )
 
@@ -30,11 +29,11 @@ type ExecWidgetParams struct {
 
 // ExecWidget implements the exec widget.
 type ExecWidget struct {
-	BlankWidget
+	ygs.BlankWidget
 
 	params ExecWidgetParams
 
-	logger logger.Logger
+	logger ygs.Logger
 
 	signal  os.Signal
 	c       chan<- []ygs.I3BarBlock
@@ -46,11 +45,13 @@ type ExecWidget struct {
 }
 
 func init() {
-	ygs.RegisterWidget("exec", NewExecWidget, ExecWidgetParams{})
+	if err := ygs.RegisterWidget("exec", NewExecWidget, ExecWidgetParams{}); err != nil {
+		panic(err)
+	}
 }
 
 // NewExecWidget returns a new ExecWidget.
-func NewExecWidget(params interface{}, wlogger logger.Logger) (ygs.Widget, error) {
+func NewExecWidget(params interface{}, wlogger ygs.Logger) (ygs.Widget, error) {
 	w := &ExecWidget{
 		params: params.(ExecWidgetParams),
 		logger: wlogger,

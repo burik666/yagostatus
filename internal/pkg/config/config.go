@@ -5,8 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"syscall"
-
-	"github.com/burik666/yagostatus/ygs"
 )
 
 // Config represents the main configuration.
@@ -16,14 +14,14 @@ type Config struct {
 		ContSignal syscall.Signal `yaml:"cont"`
 	} `yaml:"signals"`
 	Variables map[string]interface{} `yaml:"variables"`
-	Widgets   []ygs.WidgetConfig     `yaml:"widgets"`
+	Widgets   []WidgetConfig         `yaml:"widgets"`
 	File      string                 `yaml:"-"`
 }
 
 // SnippetConfig represents the snippet configuration.
 type SnippetConfig struct {
 	Variables map[string]interface{} `yaml:"variables"`
-	Widgets   []ygs.WidgetConfig     `yaml:"widgets"`
+	Widgets   []WidgetConfig         `yaml:"widgets"`
 }
 
 // LoadFile loads and parses config from file.
