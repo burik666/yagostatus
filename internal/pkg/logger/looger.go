@@ -38,7 +38,7 @@ func (l stdLogger) Errorf(format string, v ...interface{}) {
 }
 
 func (l stdLogger) Debugf(format string, v ...interface{}) {
-	l.Outputf(2, "DEBUG", format, v...)
+	l.Outputf(2, "DEBUG ", format, v...)
 }
 
 func (l stdLogger) WithPrefix(prefix string) Logger {
