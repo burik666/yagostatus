@@ -341,6 +341,11 @@ func (status *YaGoStatus) Run() error {
 					result = append(result, status.widgets[wi].output...)
 				}
 			}
+
+			if result == nil {
+				continue
+			}
+
 			fmt.Print(",")
 			err := encoder.Encode(result)
 			if err != nil {
