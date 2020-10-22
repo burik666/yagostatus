@@ -27,6 +27,8 @@ const (
 type Executor struct {
 	cmd    *exec.Cmd
 	header *ygs.I3BarHeader
+
+	shutdown bool
 }
 
 func Exec(command string, args ...string) (*Executor, error) {
@@ -81,6 +83,7 @@ func (e *Executor) Run(logger ygs.Logger, c chan<- []ygs.I3BarBlock, format Outp
 
 	defer func() {
 		_ = e.Wait()
+		_ = e.cmd.Process.Release()
 	}()
 
 	if format == OutputFormatNone {
@@ -162,6 +165,10 @@ func (e *Executor) Run(logger ygs.Logger, c chan<- []ygs.I3BarBlock, format Outp
 				return nil
 			}
 
+			if e.shutdown {
+				return nil
+			}
+
 			return err
 		}
 		c <- blocks
@@ -177,11 +184,21 @@ func (e *Executor) AddEnv(env ...string) {
 }
 
 func (e *Executor) Wait() error {
-	if e.cmd != nil && e.cmd.Process != nil {
-		return e.cmd.Wait()
+	if e.cmd != nil {
+		_ = e.cmd.Wait()
 	}
 
 	return nil
+}
+
+func (e *Executor) Shutdown() error {
+	e.shutdown = true
+
+	if err := e.Signal(syscall.SIGTERM); err != nil {
+		return err
+	}
+
+	return e.Wait()
 }
 
 func (e *Executor) Signal(sig os.Signal) error {

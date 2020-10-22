@@ -42,6 +42,8 @@ type ExecWidget struct {
 	env     []string
 
 	outputWG sync.WaitGroup
+	exc      *executor.Executor
+	shutdown bool
 }
 
 func init() {
@@ -89,6 +91,8 @@ func (w *ExecWidget) exec() error {
 		return err
 	}
 
+	w.exc = exc
+
 	exc.SetWD(w.params.WorkDir)
 
 	exc.AddEnv(w.env...)
@@ -122,6 +126,10 @@ func (w *ExecWidget) exec() error {
 					w.upd <- struct{}{}
 					w.resetTicker()
 				})()
+			}
+
+			if w.shutdown {
+				return nil
 			}
 
 			return fmt.Errorf("process exited unexpectedly: %s", state.String())
@@ -172,8 +180,7 @@ func (w *ExecWidget) Run(c chan<- []ygs.I3BarBlock) error {
 	}
 
 	for range w.upd {
-		err := w.exec()
-		if err != nil {
+		if err := w.exec(); err != nil {
 			if !w.params.Silent {
 				w.outputWG.Wait()
 
@@ -214,6 +221,22 @@ func (w *ExecWidget) setEnv(blocks []ygs.I3BarBlock) {
 	}
 
 	w.env = env
+}
+
+// Shutdown shutdowns the widget.
+func (w *ExecWidget) Shutdown() error {
+	w.shutdown = true
+
+	if w.exc != nil {
+		err := w.exc.Shutdown()
+		if err != nil {
+			return err
+		}
+
+		return w.exc.Wait()
+	}
+
+	return nil
 }
 
 func (w *ExecWidget) resetTicker() {

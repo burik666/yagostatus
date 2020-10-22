@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,6 +12,7 @@ import (
 	"runtime/debug"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/burik666/yagostatus/internal/config"
 	"github.com/burik666/yagostatus/internal/registry"
@@ -362,11 +364,18 @@ func (status *YaGoStatus) Run() error {
 func (status *YaGoStatus) Shutdown() {
 	var wg sync.WaitGroup
 
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
+	defer cancel()
+
 	for wi := range status.widgets {
 		wg.Add(1)
 
+		done := make(chan struct{})
+		defer close(done)
+
 		go func(wi int) {
 			defer wg.Done()
+
 			defer (func() {
 				if r := recover(); r != nil {
 					status.widgets[wi].logger.Errorf("widget panic: %s", r)
@@ -374,8 +383,18 @@ func (status *YaGoStatus) Shutdown() {
 				}
 			})()
 
-			if err := status.widgets[wi].instance.Shutdown(); err != nil {
-				status.widgets[wi].logger.Errorf("Failed to shutdown widget: %s", err)
+			go func() {
+				if err := status.widgets[wi].instance.Shutdown(); err != nil {
+					status.widgets[wi].logger.Errorf("Failed to shutdown widget: %s", err)
+				}
+
+				done <- struct{}{}
+			}()
+
+			select {
+			case <-ctx.Done():
+				status.widgets[wi].logger.Errorf("Failed to shutdown widget: %s", ctx.Err())
+			case <-done:
 			}
 		}(wi)
 	}

@@ -119,6 +119,8 @@ func main() {
 
 	<-shutdownsignals
 
+	logger.Infof("shutdown")
+
 	yaGoStatus.Shutdown()
 
 	logger.Infof("exit")

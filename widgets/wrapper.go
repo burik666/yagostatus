@@ -30,6 +30,7 @@ type WrapperWidget struct {
 	stdin io.WriteCloser
 
 	eventBracketWritten bool
+	shutdown            bool
 }
 
 func init() {
@@ -79,6 +80,10 @@ func (w *WrapperWidget) Run(c chan<- []ygs.I3BarBlock) error {
 		err = errors.New("process exited unexpectedly")
 
 		if state := w.exc.ProcessState(); state != nil {
+			if w.shutdown {
+				return nil
+			}
+
 			return fmt.Errorf("%w: %s", err, state.String())
 		}
 	}
@@ -139,8 +144,10 @@ func (w *WrapperWidget) Continue() error {
 
 // Shutdown shutdowns the widget.
 func (w *WrapperWidget) Shutdown() error {
+	w.shutdown = true
+
 	if w.exc != nil {
-		err := w.exc.Signal(syscall.SIGTERM)
+		err := w.exc.Shutdown()
 		if err != nil {
 			return err
 		}
