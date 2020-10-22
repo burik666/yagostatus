@@ -13,10 +13,9 @@ type WidgetConfig struct {
 	Workspaces []string            `yaml:"workspaces"`
 	Templates  []ygs.I3BarBlock    `yaml:"-"`
 	Events     []WidgetEventConfig `yaml:"events"`
-	WorkDir    string              `yaml:"-"`
+	WorkDir    string              `yaml:"workdir"`
 	Index      int                 `yaml:"-"`
 	File       string              `yaml:"-"`
-	Variables  map[string]string   `yaml:"variables"`
 
 	Params map[string]interface{} `yaml:",inline"`
 

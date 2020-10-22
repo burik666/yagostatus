@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"syscall"
+
+	"gopkg.in/yaml.v2"
 )
 
 // Config represents the main configuration.
@@ -35,7 +37,14 @@ func LoadFile(filename string) (*Config, error) {
 		return nil, err
 	}
 
-	cfg, err := parse(data, filepath.Dir(filename), filepath.Base(filename))
+	dir := filepath.Dir(filename)
+
+	dir, err = filepath.Abs(dir)
+	if err != nil {
+		return nil, err
+	}
+
+	cfg, err := parse(data, dir, filepath.Base(filename))
 	if err != nil {
 		return nil, err
 	}
@@ -60,4 +69,9 @@ func Parse(data []byte, source string) (*Config, error) {
 	cfg.File = source
 
 	return cfg, nil
+}
+
+// Dump dumps config.
+func Dump(cfg *Config) ([]byte, error) {
+	return yaml.Marshal(cfg)
 }

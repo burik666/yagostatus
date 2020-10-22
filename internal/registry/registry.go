@@ -29,6 +29,9 @@ func NewWidget(widgetConfig config.WidgetConfig, wlogger ygs.Logger) (ygs.Widget
 	pe := params.Elem()
 	pe.Set(def)
 
+	delete(widgetConfig.Params, "template")
+	delete(widgetConfig.Params, "templates")
+
 	b, err := yaml.Marshal(widgetConfig.Params)
 	if err != nil {
 		return nil, err

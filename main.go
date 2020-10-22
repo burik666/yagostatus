@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"path"
+	"path/filepath"
 	"plugin"
 	"syscall"
 
@@ -49,6 +49,7 @@ func main() {
 
 	versionFlag := flag.Bool("version", false, "print version information and exit")
 	swayFlag := flag.Bool("sway", false, "set it when using sway")
+	dumpConfigFlag := flag.Bool("dump", false, "dump parsed config file to stdout")
 
 	flag.Parse()
 
@@ -72,6 +73,17 @@ func main() {
 	if err := loadPlugins(*cfg, logger); err != nil {
 		logger.Errorf("Failed to load plugins: %s", err)
 		os.Exit(1)
+	}
+
+	if *dumpConfigFlag {
+		b, err := config.Dump(cfg)
+		if err != nil {
+			logger.Errorf("Failed to dump config: %s", err)
+			os.Exit(1)
+		}
+
+		_, _ = os.Stdout.Write(b)
+		os.Exit(0)
 	}
 
 	yaGoStatus := NewYaGoStatus(*cfg, *swayFlag, logger)
@@ -137,8 +149,8 @@ func loadConfig(configFile string) (*config.Config, error) {
 
 func loadPlugins(cfg config.Config, logger ygs.Logger) error {
 	for _, fname := range cfg.Plugins.Load {
-		if !path.IsAbs(fname) {
-			fname = path.Join(cfg.Plugins.Path, fname)
+		if !filepath.IsAbs(fname) {
+			fname = filepath.Join(cfg.Plugins.Path, fname)
 		}
 
 		logger.Infof("Load plugin: %s", fname)

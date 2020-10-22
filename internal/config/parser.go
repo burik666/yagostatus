@@ -72,7 +72,7 @@ WIDGET:
 
 		for i := range widget.Events {
 			if widget.Events[i].WorkDir == "" {
-				widget.Events[i].WorkDir = workdir
+				widget.Events[i].WorkDir = widget.WorkDir
 			}
 		}
 
@@ -91,14 +91,12 @@ WIDGET:
 
 				continue WIDGET
 			}
-
-			delete(params, "template")
 		}
 
 		if itpls, ok := params["templates"]; ok {
 			tpls, ok := itpls.(string)
 			if !ok {
-				setError(widget, fmt.Errorf("invalid templates"), false)
+				setError(widget, fmt.Errorf("invalid template"), false)
 
 				continue WIDGET
 			}
@@ -108,8 +106,6 @@ WIDGET:
 
 				continue WIDGET
 			}
-
-			delete(params, "templates")
 		}
 
 		ok, err := parseSnippet(&config, wi, params)
@@ -153,7 +149,7 @@ func parseSnippet(config *Config, wi int, params map[string]interface{}) (bool, 
 
 		filename := widget.Name[1:]
 		if !filepath.IsAbs(filename) {
-			filename = wd + "/" + filename
+			filename = filepath.Join(wd, filename)
 		}
 
 		data, err := ioutil.ReadFile(filename)
@@ -175,6 +171,10 @@ func parseSnippet(config *Config, wi int, params map[string]interface{}) (bool, 
 		dict := make(map[string]string, len(params))
 
 		for k, v := range params {
+			if k == "template" || k == "templates" {
+				continue
+			}
+
 			if _, ok := snippetConfig.Variables[k]; !ok {
 				return false, fmt.Errorf("unknown variable '%s'", k)
 			}
@@ -197,22 +197,31 @@ func parseSnippet(config *Config, wi int, params map[string]interface{}) (bool, 
 		v := reflect.ValueOf(snippetConfig.Widgets)
 		replaceRecursive(&v, dict)
 
-		tpls, _ := json.Marshal(widget.Templates)
+		var tpls []byte
+		if len(widget.Templates) > 0 {
+			tpls, _ = json.Marshal(widget.Templates)
+		}
 
 		wd = filepath.Dir(filename)
 
 		for i := range snippetConfig.Widgets {
-			snippetConfig.Widgets[i].WorkDir = wd
+			if snippetConfig.Widgets[i].WorkDir == "" {
+				snippetConfig.Widgets[i].WorkDir = wd
+			}
+
 			snippetConfig.Widgets[i].File = filename
 			snippetConfig.Widgets[i].Index = i
 			//nolint:gocritic
 			snippetConfig.Widgets[i].IncludeStack = append(widget.IncludeStack, widget.Name)
-			_ = json.Unmarshal(tpls, &snippetConfig.Widgets[i].Templates)
+			if tpls != nil {
+				snippetConfig.Widgets[i].Params["templates"] = string(tpls)
+				_ = json.Unmarshal(tpls, &snippetConfig.Widgets[i].Templates)
+			}
 
 			snipEvents := snippetConfig.Widgets[i].Events
-			for i := range snipEvents {
-				if snipEvents[i].WorkDir == "" {
-					snipEvents[i].WorkDir = wd
+			for ei := range snipEvents {
+				if snipEvents[ei].WorkDir == "" {
+					snipEvents[ei].WorkDir = snippetConfig.Widgets[i].WorkDir
 				}
 			}
 
