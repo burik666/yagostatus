@@ -8,36 +8,62 @@ import (
 	"github.com/burik666/yagostatus/ygs"
 )
 
-func New(flags int) ygs.Logger {
-	return &stdLogger{
-		std: log.New(os.Stderr, "", flags),
+func New() ygs.Logger {
+	return &logger{
+		std:       log.New(os.Stderr, "", log.Ldate+log.Ltime+log.Lshortfile),
+		calldepth: 2,
 	}
 }
 
-type stdLogger struct {
-	std    *log.Logger
-	prefix string
+type logger struct {
+	std       *log.Logger
+	prefix    string
+	calldepth int
 }
 
-func (l stdLogger) Outputf(calldepth int, subprefix string, format string, v ...interface{}) {
+func (l logger) outputf(calldepth int, subprefix string, format string, v ...interface{}) {
 	st := l.prefix + subprefix + fmt.Sprintf(format, v...)
 	_ = l.std.Output(calldepth+1, st)
 }
 
-func (l stdLogger) Infof(format string, v ...interface{}) {
-	l.Outputf(2, "INFO ", format, v...)
+func (l logger) Infof(format string, v ...interface{}) {
+	l.outputf(l.calldepth, "INFO ", format, v...)
 }
 
-func (l stdLogger) Errorf(format string, v ...interface{}) {
-	l.Outputf(2, "ERROR ", format, v...)
+func (l logger) Errorf(format string, v ...interface{}) {
+	l.outputf(l.calldepth, "ERROR ", format, v...)
 }
 
-func (l stdLogger) Debugf(format string, v ...interface{}) {
-	l.Outputf(2, "DEBUG ", format, v...)
+func (l logger) Debugf(format string, v ...interface{}) {
+	l.outputf(l.calldepth, "DEBUG ", format, v...)
 }
 
-func (l stdLogger) WithPrefix(prefix string) ygs.Logger {
+func (l logger) WithPrefix(prefix string) ygs.Logger {
 	l.prefix = prefix + " "
 
 	return &l
+}
+
+var l = &logger{
+	std:       log.New(os.Stderr, "", log.Ldate+log.Ltime+log.Lshortfile),
+	calldepth: 3,
+}
+
+func Infof(format string, v ...interface{}) {
+	l.Infof(format, v...)
+}
+
+func Errorf(format string, v ...interface{}) {
+	l.Errorf(format, v...)
+}
+
+func Debugf(format string, v ...interface{}) {
+	l.Debugf(format, v...)
+}
+
+func WithPrefix(prefix string) ygs.Logger {
+	nl := *l
+	nl.calldepth--
+
+	return nl.WithPrefix(prefix)
 }

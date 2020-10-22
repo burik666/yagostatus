@@ -4,7 +4,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"path"
@@ -42,7 +41,7 @@ widgets:
 `)
 
 func main() {
-	logger := logger.New(log.Ldate + log.Ltime + log.Lshortfile)
+	logger := logger.New()
 
 	var configFile string
 
