@@ -26,7 +26,7 @@ type I3BarBlock struct {
 	BorderRight         *uint16         `json:"border_right,omitempty"`
 	BackgroundColor     string          `json:"background,omitempty"`
 	Markup              string          `json:"markup,omitempty"`
-	MinWidth            string          `json:"min_width,omitempty"`
+	MinWidth            Vary            `json:"min_width,omitempty"`
 	Align               string          `json:"align,omitempty"`
 	Name                string          `json:"name,omitempty"`
 	Instance            string          `json:"instance,omitempty"`

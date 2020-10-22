@@ -154,8 +154,21 @@ func convertFieldValue(f reflect.Value, k string, v Vary, strict bool) error {
 				reflect.Indirect(val).SetBool(true)
 			}
 		}
+	case reflect.Slice: // Vary
+		if strings.HasPrefix(sv, "\"") {
+			reflect.Indirect(val).SetBytes(v)
+
+			break
+		}
+
+		s := strings.Trim(sv, "\"")
+		if _, err := strconv.ParseUint(s, 10, 64); err != nil {
+			return fmt.Errorf("invalid value for %s: %s", k, sv)
+		}
+
+		reflect.Indirect(val).SetBytes([]byte(s))
 	default:
-		panic("unsuported type")
+		panic(fmt.Sprintf("unsuported type %s: %s", k, reflect.Indirect(val).Kind()))
 	}
 
 	f.Set(val)
