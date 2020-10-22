@@ -12,6 +12,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/burik666/yagostatus/internal/logger"
 	"github.com/burik666/yagostatus/ygs"
 
 	"gopkg.in/yaml.v2"
@@ -22,7 +23,7 @@ func parse(data []byte, workdir string, source string) (*Config, error) {
 	config.Signals.StopSignal = syscall.SIGUSR1
 	config.Signals.ContSignal = syscall.SIGCONT
 
-	if err := yaml.Unmarshal(data, &config); err != nil {
+	if err := yaml.UnmarshalStrict(data, &config); err != nil {
 		return nil, trimYamlErr(err, false)
 	}
 
@@ -55,6 +56,8 @@ func parse(data []byte, workdir string, source string) (*Config, error) {
 WIDGET:
 	for wi := 0; wi < len(config.Widgets); wi++ {
 		widget := &config.Widgets[wi]
+
+		l := logger.WithPrefix(fmt.Sprintf("[%s#%d]", widget.File, widget.Index+1))
 
 		params := make(map[string]interface{})
 		for k, v := range config.Widgets[wi].Params {
@@ -111,6 +114,8 @@ WIDGET:
 
 		ok, err := parseSnippet(&config, wi, params)
 		if err != nil {
+			l.Errorf("parse snippets: %s", err)
+
 			setError(widget, err, false)
 
 			continue WIDGET
@@ -157,8 +162,8 @@ func parseSnippet(config *Config, wi int, params map[string]interface{}) (bool, 
 		}
 
 		var snippetConfig SnippetConfig
-		if err := yaml.Unmarshal(data, &snippetConfig); err != nil {
-			return false, err
+		if err := yaml.UnmarshalStrict(data, &snippetConfig); err != nil {
+			return false, trimYamlErr(err, false)
 		}
 
 		for k, v := range snippetConfig.Variables {
