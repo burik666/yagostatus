@@ -6,7 +6,7 @@ Yet Another i3status replacement written in Go.
 [![GitHub license](https://img.shields.io/github/license/burik666/yagostatus.svg)](https://github.com/burik666/yagostatus/blob/master/LICENSE)
 
 
-[![yagostatus.gif](https://raw.githubusercontent.com/wiki/burik666/yagostatus/yagostatus.gif)](https://github.com/burik666/yagostatus/wiki/Conky)
+[![yagostatus.gif](https://raw.githubusercontent.com/wiki/burik666/yagostatus/yagostatus.gif)]
 
 ## Features
 - Instant and independent updating of widgets.
@@ -109,8 +109,8 @@ Example:
     Also env variables are available: `$I3_NAME`, `$I3_INSTANCE`, `$I3_BUTTON`, `$I3_MODIFIERS`, `$I3_X`, `$I3_Y`, `$I3_RELATIVE_X`, `$I3_RELATIVE_Y`, `$I3_WIDTH`, `$I3_HEIGHT`, `$I3_MODIFIERS`.
     The clicked widget fields are available as ENV variables with the prefix `I3_` (example:` $ I3_full_text`).
     * `workdir` - Set a working directory.
-    * 'env' - Set environment variables.
-    * `output_format` - The command output format (none, text, json, auto) (default: `none`).
+    * `env` - Set environment variables.
+    * `output_format` - The command output format (`none`, `text`, `json`, `auto`) (default: `none`).
     * `name` - Filter by `name` for widgets with multiple blocks (default: empty).
     * `instance` - Filter by `instance` for widgets with multiple blocks (default: empty).
     * `override` - If `true`, previously defined events with the same `button`, `modifier`, `name` and `instance` will be ignored (default: `false`)
@@ -197,12 +197,12 @@ This widget runs the command at the specified interval.
 
 - `command` - Command to execute (via `sh -c`).
 - `workdir` - Set a working directory.
-- 'env' - Set environment variables.
+- `env` - Set environment variables.
 - `interval` - Update interval in seconds (`0` to run once at start; `-1` for loop without delay; default: `0`).
 - `retry` - Retry interval in seconds if command failed (default: none).
 - `silent` - Don't show error widget if command failed (default: `false`).
 - `events_update` - Update widget if an event occurred (default: `false`).
-- `output_format` - The command output format (none, text, json, auto) (default: `auto`).
+- `output_format` - The command output format (`none`, `text`, `json`, `auto`) (default: `auto`).
 - `signal` - SIGRTMIN offset to update widget. Should be between 0 and `SIGRTMIN`-`SIGRTMAX`.
 
 The current widget fields are available as ENV variables with the prefix `I3_` (example: `$I3_full_text`).
