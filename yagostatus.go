@@ -150,6 +150,8 @@ func (status *YaGoStatus) processWidgetEvents(wi int, outputIndex int, event ygs
 				fmt.Sprintf("I3_%s=%d", "Y", event.Y),
 				fmt.Sprintf("I3_%s=%d", "RELATIVE_X", event.RelativeX),
 				fmt.Sprintf("I3_%s=%d", "RELATIVE_Y", event.RelativeY),
+				fmt.Sprintf("I3_%s=%d", "OUTPUT_X", event.OutputX),
+				fmt.Sprintf("I3_%s=%d", "OUTPUT_Y", event.OutputY),
 				fmt.Sprintf("I3_%s=%d", "WIDTH", event.Width),
 				fmt.Sprintf("I3_%s=%d", "HEIGHT", event.Height),
 				fmt.Sprintf("I3_%s=%s", "MODIFIERS", strings.Join(event.Modifiers, ",")),

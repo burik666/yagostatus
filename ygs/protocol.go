@@ -45,6 +45,8 @@ type I3BarClickEvent struct {
 	Y         uint16   `json:"y"`
 	RelativeX uint16   `json:"relative_x"`
 	RelativeY uint16   `json:"relative_y"`
+	OutputX   uint16   `json:"output_x"`
+	OutputY   uint16   `json:"output_y"`
 	Width     uint16   `json:"width"`
 	Height    uint16   `json:"height"`
 	Modifiers []string `json:"modifiers"`

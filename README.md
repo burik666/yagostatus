@@ -106,7 +106,7 @@ Example:
     * `modifiers` - List of X11 modifiers condition.
     * `command` - Command to execute (via `sh -c`).
     Сlick_event json will be written to stdin.
-    Also env variables are available: `$I3_NAME`, `$I3_INSTANCE`, `$I3_BUTTON`, `$I3_MODIFIERS`, `$I3_X`, `$I3_Y`, `$I3_RELATIVE_X`, `$I3_RELATIVE_Y`, `$I3_WIDTH`, `$I3_HEIGHT`, `$I3_MODIFIERS`.
+    Also env variables are available: `$I3_NAME`, `$I3_INSTANCE`, `$I3_BUTTON`, `$I3_MODIFIERS`, `$I3_{X,Y}`, `$I3_OUTPUT_{X,Y}`, `$I3_RELATIVE_{X,Y}`, `$I3_{WIDTH,HEIGHT}`, `$I3_MODIFIERS`.
     The clicked widget fields are available as ENV variables with the prefix `I3_` (example:` $ I3_full_text`).
     * `workdir` - Set a working directory.
     * `env` - Set environment variables.
