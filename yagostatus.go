@@ -281,8 +281,9 @@ func (status *YaGoStatus) eventReader() error {
 func (status *YaGoStatus) Run() error {
 	status.upd = make(chan int)
 
+	status.updateWorkspaces()
+
 	go (func() {
-		status.updateWorkspaces()
 		recv := i3.Subscribe(i3.WorkspaceEventType)
 		for recv.Next() {
 			e := recv.Event().(*i3.WorkspaceEvent)
@@ -347,11 +348,13 @@ func (status *YaGoStatus) Run() error {
 				}
 			}
 
+			fmt.Print(",")
+
 			if result == nil {
+				fmt.Print("[]")
+
 				continue
 			}
-
-			fmt.Print(",")
 
 			if err := encoder.Encode(result); err != nil {
 				status.logger.Errorf("Failed to encode result: %s", err)
