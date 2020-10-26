@@ -210,9 +210,9 @@ func (e *Executor) Shutdown() error {
 	return e.wait()
 }
 
-func (e *Executor) Signal(sig os.Signal) error {
+func (e *Executor) Signal(sig syscall.Signal) error {
 	if e.cmd != nil && e.cmd.Process != nil && e.cmd.Process.Pid > 1 {
-		return e.cmd.Process.Signal(sig)
+		return syscall.Kill(-e.cmd.Process.Pid, sig)
 	}
 
 	return nil
