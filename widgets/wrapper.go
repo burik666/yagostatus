@@ -77,14 +77,12 @@ func (w *WrapperWidget) Run(c chan<- []ygs.I3BarBlock) error {
 
 	err = w.exc.Run(w.logger, c, executor.OutputFormatJSON)
 	if err == nil {
-		err = errors.New("process exited unexpectedly")
+		if w.shutdown {
+			return nil
+		}
 
 		if state := w.exc.ProcessState(); state != nil {
-			if w.shutdown {
-				return nil
-			}
-
-			return fmt.Errorf("%w: %s", err, state.String())
+			return fmt.Errorf("process exited unexpectedly: %s", state.String())
 		}
 	}
 
@@ -147,12 +145,9 @@ func (w *WrapperWidget) Shutdown() error {
 	w.shutdown = true
 
 	if w.exc != nil {
-		err := w.exc.Shutdown()
-		if err != nil {
+		if err := w.exc.Shutdown(); err != nil {
 			return err
 		}
-
-		return w.exc.Wait()
 	}
 
 	return nil

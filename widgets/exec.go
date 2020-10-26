@@ -228,12 +228,9 @@ func (w *ExecWidget) Shutdown() error {
 	w.shutdown = true
 
 	if w.exc != nil {
-		err := w.exc.Shutdown()
-		if err != nil {
+		if err := w.exc.Shutdown(); err != nil {
 			return err
 		}
-
-		return w.exc.Wait()
 	}
 
 	return nil

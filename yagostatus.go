@@ -195,6 +195,10 @@ func (status *YaGoStatus) processWidgetEvents(wi int, outputIndex int, event ygs
 			if err != nil {
 				return err
 			}
+
+			if state := exc.ProcessState(); state != nil && state.ExitCode() != 0 {
+				return fmt.Errorf("process exited unexpectedly: %s", state.String())
+			}
 		}
 	}
 
@@ -369,7 +373,7 @@ func (status *YaGoStatus) Run() error {
 func (status *YaGoStatus) Shutdown() {
 	var wg sync.WaitGroup
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	defer cancel()
 
 	for wi := range status.widgets {

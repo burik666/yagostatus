@@ -28,7 +28,8 @@ type Executor struct {
 	cmd    *exec.Cmd
 	header *ygs.I3BarHeader
 
-	shutdown bool
+	finished bool
+	waiterr  error
 }
 
 func Exec(command string, args ...string) (*Executor, error) {
@@ -61,14 +62,14 @@ func (e *Executor) Run(logger ygs.Logger, c chan<- []ygs.I3BarBlock, format Outp
 		return err
 	}
 
+	defer stderr.Close()
+
 	go (func() {
 		scanner := bufio.NewScanner(stderr)
 		for scanner.Scan() {
 			logger.Errorf("(stderr) %s", scanner.Text())
 		}
 	})()
-
-	defer stderr.Close()
 
 	stdout, err := e.cmd.StdoutPipe()
 	if err != nil {
@@ -82,8 +83,7 @@ func (e *Executor) Run(logger ygs.Logger, c chan<- []ygs.I3BarBlock, format Outp
 	}
 
 	defer func() {
-		_ = e.Wait()
-		_ = e.cmd.Process.Release()
+		_ = e.wait()
 	}()
 
 	if format == OutputFormatNone {
@@ -158,6 +158,10 @@ func (e *Executor) Run(logger ygs.Logger, c chan<- []ygs.I3BarBlock, format Outp
 		c <- blocks
 	}
 
+	defer func() {
+		_ = e.Shutdown()
+	}()
+
 	for {
 		var blocks []ygs.I3BarBlock
 		if err := decoder.Decode(&blocks); err != nil {
@@ -165,7 +169,7 @@ func (e *Executor) Run(logger ygs.Logger, c chan<- []ygs.I3BarBlock, format Outp
 				return nil
 			}
 
-			if e.shutdown {
+			if e.finished {
 				return nil
 			}
 
@@ -183,26 +187,31 @@ func (e *Executor) AddEnv(env ...string) {
 	e.cmd.Env = append(e.cmd.Env, env...)
 }
 
-func (e *Executor) Wait() error {
-	if e.cmd != nil {
-		_ = e.cmd.Wait()
+func (e *Executor) wait() error {
+	if e.finished {
+		return e.waiterr
 	}
 
-	return nil
+	e.waiterr = e.cmd.Wait()
+	e.finished = true
+
+	return e.waiterr
 }
 
 func (e *Executor) Shutdown() error {
-	e.shutdown = true
-
-	if err := e.Signal(syscall.SIGTERM); err != nil {
-		return err
+	if e.finished {
+		return nil
 	}
 
-	return e.Wait()
+	if e.cmd != nil && e.cmd.Process != nil && e.cmd.Process.Pid > 1 {
+		return syscall.Kill(-e.cmd.Process.Pid, syscall.SIGTERM)
+	}
+
+	return e.wait()
 }
 
 func (e *Executor) Signal(sig os.Signal) error {
-	if e.cmd != nil && e.cmd.Process != nil {
+	if e.cmd != nil && e.cmd.Process != nil && e.cmd.Process.Pid > 1 {
 		return e.cmd.Process.Signal(sig)
 	}
 
