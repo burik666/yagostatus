@@ -139,7 +139,15 @@ func (w *HTTPWidget) Shutdown() error {
 		return nil
 	}
 
-	return w.instance.server.Shutdown(context.Background())
+	if err := w.instance.l.Close(); err != nil {
+		return err
+	}
+
+	if err := w.instance.server.Shutdown(context.Background()); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (w *HTTPWidget) httpHandler(response http.ResponseWriter, request *http.Request) {
