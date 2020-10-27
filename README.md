@@ -6,7 +6,7 @@ Yet Another i3status replacement written in Go.
 [![GitHub license](https://img.shields.io/github/license/burik666/yagostatus.svg)](https://github.com/burik666/yagostatus/blob/master/LICENSE)
 
 
-[![yagostatus.gif](https://raw.githubusercontent.com/wiki/burik666/yagostatus/yagostatus.gif)]
+![yagostatus.gif](https://raw.githubusercontent.com/wiki/burik666/yagostatus/yagostatus.gif)
 
 ## Features
 - Instant and independent updating of widgets.
@@ -288,33 +288,33 @@ This example shows how you can use custom fields.
 ### Volume control
 i3 config:
 ```
-bindsym XF86AudioLowerVolume exec amixer -c 1 -q set Master 1%-; exec pkill -SIGRTMIN+1 yagostatus
-bindsym XF86AudioRaiseVolume exec amixer -c 1 -q set Master 1%+; exec pkill -SIGRTMIN+1 yagostatus
-bindsym XF86AudioMute exec amixer -q set Master toggle; exec pkill -SIGRTMIN+1 yagostatus
+bindsym XF86AudioLowerVolume exec pactl set-sink-volume @DEFAULT_SINK@ -1%; exec pkill -SIGRTMIN+1 yagostatus
+bindsym XF86AudioRaiseVolume exec pactl set-sink-volume @DEFAULT_SINK@ +1%; exec pkill -SIGRTMIN+1 yagostatus
+bindsym XF86AudioMute exec pactl set-sink-mute @DEFAULT_SINK@ toggle; exec pkill -SIGRTMIN+1 yagostatus
 ```
 
 ```yml
   - widget: exec
     command: |
-        res=($(amixer get Master|grep -Eo '\[[0-9]+%\] \[(on|off)\]'|head -n1|tr -d "[]"))
         color="#ffffff"
-        if [ "${res[1]}" = "off" ]; then
-            color="#ff0000"
+        if [ $(pacmd list-sinks |sed  '1,/* index/d'|grep -E '^\smuted:'|head -n1|awk '{print $2}') = "yes" ]; then
+          color="#ff0000"
         fi
-        echo -e '[{"full_text": "<span font_family=\"Symbola\">\xF0\x9F\x94\x8A</span> '${res[0]}'", "color": "'$color'"}]'
+        volume=$(pacmd list-sinks |sed  '1,/* index/d'|grep -E '^\svolume:'|head -n1|awk '{print $5}')
+        echo -e '[{"full_text":"♪ '${volume}'","color":"'$color'"}]'
 
     interval: 0
     signal: 1
     events_update: true
     events:
         - button: 1
-          command: amixer -q set Master toggle
+          command: pactl set-sink-mute @DEFAULT_SINK@ toggle
 
         - button: 4
-          command: amixer -q set Master 3%+
+          command: pactl set-sink-volume @DEFAULT_SINK@ +1%
 
         - button: 5
-          command: amixer -q set Master 3%-
+          command: pactl set-sink-volume @DEFAULT_SINK@ -1%
 
     templates: >
         [{
@@ -350,6 +350,8 @@ Requires [jq](https://stedolan.github.com/jq/) for json parsing.
             "separator_block_width": 21
         }]
 ```
+
+You can use the [weather snippet](https://github.com/burik666/ygs-snippets/tree/master/weather) instead.
 
 ### Conky
 
