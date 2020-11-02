@@ -289,6 +289,7 @@ func replaceRecursive(v *reflect.Value, dict map[string]string) {
 		for i := 0; i < vv.Len(); i++ {
 			vi := vv.Index(i)
 			replaceRecursive(&vi, dict)
+			vv.Index(i).Set(vi)
 		}
 	case reflect.Map:
 		for _, i := range vv.MapKeys() {
