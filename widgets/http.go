@@ -135,12 +135,8 @@ func (w *HTTPWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock) e
 }
 
 func (w *HTTPWidget) Shutdown() error {
-	if w.instance == nil {
+	if w.instance == nil || w.instance.l == nil {
 		return nil
-	}
-
-	if err := w.instance.l.Close(); err != nil {
-		return err
 	}
 
 	if err := w.instance.server.Shutdown(context.Background()); err != nil {
