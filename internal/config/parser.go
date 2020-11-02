@@ -59,12 +59,10 @@ WIDGET:
 
 		l := logger.WithPrefix(fmt.Sprintf("[%s#%d]", widget.File, widget.Index+1))
 
-		params := make(map[string]interface{})
-		for k, v := range config.Widgets[wi].Params {
-			params[strings.ToLower(k)] = v
+		params := config.Widgets[wi].Params
+		if params == nil {
+			params = make(map[string]interface{})
 		}
-
-		config.Widgets[wi].Params = params
 
 		if widget.WorkDir == "" {
 			widget.WorkDir = workdir
