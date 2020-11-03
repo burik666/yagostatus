@@ -20,9 +20,13 @@ type ClockWidget struct {
 }
 
 func init() {
-	if err := ygs.RegisterWidget("clock", NewClockWidget, ClockWidgetParams{
-		Interval: 1,
-		Format:   "Jan _2 Mon 15:04:05",
+	if err := ygs.RegisterWidget(ygs.WidgetSpec{
+		Name:    "clock",
+		NewFunc: NewClockWidget,
+		DefaultParams: ClockWidgetParams{
+			Interval: 1,
+			Format:   "Jan _2 Mon 15:04:05",
+		},
 	}); err != nil {
 		panic(err)
 	}

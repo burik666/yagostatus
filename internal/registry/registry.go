@@ -21,7 +21,7 @@ func NewWidget(widgetConfig config.WidgetConfig, wlogger ygs.Logger) (ygs.Widget
 		return nil, fmt.Errorf("widget '%s' not found", name)
 	}
 
-	widget := wi.(ygs.RegistryWidget)
+	widget := wi.(ygs.WidgetSpec)
 
 	def := reflect.ValueOf(widget.DefaultParams)
 

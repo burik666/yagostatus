@@ -9,5 +9,3 @@ type Widget interface {
 	Continue() error
 	Shutdown() error
 }
-
-type NewWidgetFunc = func(interface{}, Logger) (Widget, error)

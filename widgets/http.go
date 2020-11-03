@@ -48,8 +48,12 @@ type httpInstance struct {
 var instances map[string]*httpInstance
 
 func init() {
-	if err := ygs.RegisterWidget("http", NewHTTPWidget, HTTPWidgetParams{
-		Network: "tcp",
+	if err := ygs.RegisterWidget(ygs.WidgetSpec{
+		Name:    "http",
+		NewFunc: NewHTTPWidget,
+		DefaultParams: HTTPWidgetParams{
+			Network: "tcp",
+		},
 	}); err != nil {
 		panic(err)
 	}

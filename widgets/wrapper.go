@@ -34,7 +34,11 @@ type WrapperWidget struct {
 }
 
 func init() {
-	if err := ygs.RegisterWidget("wrapper", NewWrapperWidget, WrapperWidgetParams{}); err != nil {
+	if err := ygs.RegisterWidget(ygs.WidgetSpec{
+		Name:          "wrapper",
+		NewFunc:       NewWrapperWidget,
+		DefaultParams: WrapperWidgetParams{},
+	}); err != nil {
 		panic(err)
 	}
 }

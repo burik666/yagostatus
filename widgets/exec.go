@@ -47,7 +47,11 @@ type ExecWidget struct {
 }
 
 func init() {
-	if err := ygs.RegisterWidget("exec", NewExecWidget, ExecWidgetParams{}); err != nil {
+	if err := ygs.RegisterWidget(ygs.WidgetSpec{
+		Name:          "exec",
+		NewFunc:       NewExecWidget,
+		DefaultParams: ExecWidgetParams{},
+	}); err != nil {
 		panic(err)
 	}
 }

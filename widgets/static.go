@@ -22,7 +22,11 @@ type StaticWidget struct {
 }
 
 func init() {
-	if err := ygs.RegisterWidget("static", NewStaticWidget, StaticWidgetParams{}); err != nil {
+	if err := ygs.RegisterWidget(ygs.WidgetSpec{
+		Name:          "static",
+		NewFunc:       NewStaticWidget,
+		DefaultParams: StaticWidgetParams{},
+	}); err != nil {
 		panic(err)
 	}
 }
