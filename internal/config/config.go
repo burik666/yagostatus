@@ -16,8 +16,8 @@ type Config struct {
 		ContSignal syscall.Signal `yaml:"cont"`
 	} `yaml:"signals"`
 	Plugins struct {
-		Path string   `yaml:"path"`
-		Load []string `yaml:"load"`
+		Path string         `yaml:"path"`
+		Load []PluginConfig `yaml:"load"`
 	} `yaml:"plugins"`
 	Variables map[string]interface{} `yaml:"variables"`
 	Widgets   []WidgetConfig         `yaml:"widgets"`

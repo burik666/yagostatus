@@ -15,7 +15,7 @@ import (
 // NewWidget creates new widget by name.
 func NewWidget(widgetConfig config.WidgetConfig, wlogger ygs.Logger) (ygs.Widget, error) {
 	name := widgetConfig.Name
-	wi, ok := rs.Load(name)
+	wi, ok := rs.Load("widget_" + name)
 
 	if !ok {
 		return nil, fmt.Errorf("widget '%s' not found", name)

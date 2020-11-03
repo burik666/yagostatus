@@ -6,13 +6,10 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"path/filepath"
-	"plugin"
 	"syscall"
 
 	"github.com/burik666/yagostatus/internal/config"
 	"github.com/burik666/yagostatus/internal/logger"
-	"github.com/burik666/yagostatus/ygs"
 )
 
 var builtinConfig = []byte(`
@@ -59,9 +56,12 @@ func main() {
 		return
 	}
 
+	var initErrors []error
+
 	cfg, cfgError := loadConfig(configFile)
 	if cfgError != nil {
 		logger.Errorf("Failed to load config: %s", cfgError)
+		initErrors = append(initErrors, cfgError)
 	}
 
 	if cfg != nil {
@@ -70,9 +70,9 @@ func main() {
 		cfg = &config.Config{}
 	}
 
-	if err := loadPlugins(*cfg, logger); err != nil {
+	if err := config.LoadPlugins(*cfg, logger); err != nil {
 		logger.Errorf("Failed to load plugins: %s", err)
-		os.Exit(1)
+		initErrors = append(initErrors, err)
 	}
 
 	if *dumpConfigFlag {
@@ -86,10 +86,15 @@ func main() {
 		os.Exit(0)
 	}
 
+	if err := config.InitPlugins(logger); err != nil {
+		logger.Errorf("Failed to init plugins: %s", err)
+		initErrors = append(initErrors, err)
+	}
+
 	yaGoStatus := NewYaGoStatus(*cfg, *swayFlag, logger)
 
-	if cfgError != nil {
-		yaGoStatus.errorWidget(cfgError.Error())
+	for _, err := range initErrors {
+		yaGoStatus.errorWidget(err.Error())
 	}
 
 	stopContSignals := make(chan os.Signal, 1)
@@ -121,6 +126,8 @@ func main() {
 
 	logger.Infof("shutdown")
 
+	config.ShutdownPlugins(logger)
+
 	yaGoStatus.Shutdown()
 
 	logger.Infof("exit")
@@ -147,21 +154,4 @@ func loadConfig(configFile string) (*config.Config, error) {
 	}
 
 	return config.LoadFile(configFile)
-}
-
-func loadPlugins(cfg config.Config, logger ygs.Logger) error {
-	for _, fname := range cfg.Plugins.Load {
-		if !filepath.IsAbs(fname) {
-			fname = filepath.Join(cfg.Plugins.Path, fname)
-		}
-
-		logger.Infof("Load plugin: %s", fname)
-
-		_, err := plugin.Open(fname)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
