@@ -9,9 +9,11 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"reflect"
 	"runtime/debug"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/burik666/yagostatus/internal/config"
@@ -108,7 +110,6 @@ func (status *YaGoStatus) addWidget(wcfg config.WidgetConfig) {
 		status.widgets = append(status.widgets, widgetContainer{
 			instance: widget,
 			config:   wcfg,
-			ch:       make(chan []ygs.I3BarBlock),
 			logger:   wlogger,
 		})
 	})()
@@ -299,15 +300,21 @@ func (status *YaGoStatus) Run() error {
 		}
 	})()
 
+	widgetChans := make([]reflect.SelectCase, len(status.widgets))
+
+	var wcounter int32 = int32(len(status.widgets))
+
 	for wi := range status.widgets {
-		go func(wi int) {
-			for out := range status.widgets[wi].ch {
-				status.addWidgetOutput(wi, out)
-			}
-		}(wi)
+		status.widgets[wi].ch = make(chan []ygs.I3BarBlock)
+
+		widgetChans[wi] = reflect.SelectCase{
+			Dir:  reflect.SelectRecv,
+			Chan: reflect.ValueOf(status.widgets[wi].ch),
+		}
 
 		go func(wi int) {
 			defer (func() {
+				atomic.AddInt32(&wcounter, -1)
 				if r := recover(); r != nil {
 					status.widgets[wi].logger.Errorf("widget panic: %s", r)
 					debug.PrintStack()
@@ -327,6 +334,13 @@ func (status *YaGoStatus) Run() error {
 			}
 		}(wi)
 	}
+
+	go func() {
+		for wcounter > 0 {
+			wi, out, _ := reflect.Select(widgetChans)
+			status.addWidgetOutput(wi, out.Interface().([]ygs.I3BarBlock))
+		}
+	}()
 
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetEscapeHTML(false)
