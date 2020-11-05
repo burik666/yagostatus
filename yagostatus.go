@@ -376,6 +376,8 @@ func (status *YaGoStatus) Run() error {
 
 			if err := encoder.Encode(result); err != nil {
 				status.logger.Errorf("Failed to encode result: %s", err)
+
+				break
 			}
 		}
 	}()

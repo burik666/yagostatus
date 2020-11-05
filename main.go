@@ -113,7 +113,12 @@ func main() {
 	}()
 
 	shutdownsignals := make(chan os.Signal, 1)
-	signal.Notify(shutdownsignals, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	signal.Notify(shutdownsignals,
+		syscall.SIGINT,
+		syscall.SIGTERM,
+		syscall.SIGQUIT,
+		syscall.SIGPIPE,
+	)
 
 	go func() {
 		if err := yaGoStatus.Run(); err != nil {
