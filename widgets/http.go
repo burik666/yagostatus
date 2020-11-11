@@ -216,7 +216,7 @@ func (w *HTTPWidget) wsHandler(ws *websocket.Conn) {
 
 	for {
 		if err := websocket.JSON.Receive(ws, &blocks); err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				break
 			}
 

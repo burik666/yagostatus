@@ -32,7 +32,7 @@ func LoadPlugins(cfg Config, logger ygs.Logger) error {
 
 		plugin, err := p.Lookup("Plugin")
 		if err != nil {
-			return fmt.Errorf("variable Plugin: %s", err)
+			return fmt.Errorf("variable Plugin: %w", err)
 		}
 
 		pv := reflect.ValueOf(plugin)
@@ -63,7 +63,7 @@ func LoadPlugins(cfg Config, logger ygs.Logger) error {
 		}
 
 		if err := ygs.RegisterPlugin(spec); err != nil {
-			return fmt.Errorf("failed to register plugin: %s", err)
+			return fmt.Errorf("failed to register plugin: %w", err)
 		}
 	}
 

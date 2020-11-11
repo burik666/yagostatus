@@ -142,7 +142,7 @@ func loadConfig(configFile string) (*config.Config, error) {
 	if configFile == "" {
 		configDir, err := os.UserConfigDir()
 		if err != nil {
-			return nil, fmt.Errorf("failed to get config dir: %s", err)
+			return nil, fmt.Errorf("failed to get config dir: %w", err)
 		}
 
 		cfg, err := config.LoadFile(configDir + "/yagostatus/yagostatus.yml")

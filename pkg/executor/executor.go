@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"io/ioutil"
 	"os"
@@ -165,7 +166,7 @@ func (e *Executor) Run(logger ygs.Logger, c chan<- []ygs.I3BarBlock, format Outp
 	for {
 		var blocks []ygs.I3BarBlock
 		if err := decoder.Decode(&blocks); err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				return nil
 			}
 

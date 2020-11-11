@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -64,7 +65,7 @@ func NewYaGoStatus(cfg config.Config, sway bool, l ygs.Logger) *YaGoStatus {
 		i3.SocketPathHook = func() (string, error) {
 			out, err := exec.Command("sway", "--get-socketpath").CombinedOutput()
 			if err != nil {
-				return "", fmt.Errorf("getting sway socketpath: %v (output: %s)", err, out)
+				return "", fmt.Errorf("getting sway socketpath: %w (output: %s)", err, out)
 			}
 
 			return string(out), nil
@@ -73,7 +74,7 @@ func NewYaGoStatus(cfg config.Config, sway bool, l ygs.Logger) *YaGoStatus {
 		i3.IsRunningHook = func() bool {
 			out, err := exec.Command("pgrep", "-c", "sway\\$").CombinedOutput()
 			if err != nil {
-				l.Errorf("sway running: %v (output: %s)", err, out)
+				l.Errorf("sway running: %w (output: %s)", err, out)
 			}
 
 			return bytes.Equal(out, []byte("1"))
@@ -246,7 +247,7 @@ func (status *YaGoStatus) eventReader() error {
 	for {
 		line, err := reader.ReadString('\n')
 		if err != nil {
-			if err != io.EOF {
+			if errors.Is(err, io.EOF) {
 				return err
 			}
 

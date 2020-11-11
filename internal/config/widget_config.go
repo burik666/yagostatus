@@ -30,7 +30,7 @@ func (c WidgetConfig) Validate() error {
 
 	for ei := range c.Events {
 		if err := c.Events[ei].Validate(); err != nil {
-			return fmt.Errorf("events#%d: %s", ei+1, err)
+			return fmt.Errorf("events#%d: %w", ei+1, err)
 		}
 	}
 
