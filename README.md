@@ -14,10 +14,11 @@ Yet Another i3status replacement written in Go.
 - Shell scripting widgets and events handlers.
 - Wrapping other status programs (i3status, py3status, conky, etc.).
 - Different widgets on different workspaces.
-- [Snippets](https://github.com/burik666/ygs-snippets).
 - Templates for widgets outputs.
 - Update widget via http/websocket requests.
 - Update widget by POSIX Real-Time Signals (SIGRTMIN-SIGRTMAX).
+- [Snippets](https://github.com/burik666/ygs-snippets).
+- [Plugins](plugins).
 
 ## Installation
 

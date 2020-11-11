@@ -20,8 +20,10 @@ import (
 	"github.com/burik666/yagostatus/internal/config"
 	"github.com/burik666/yagostatus/internal/registry"
 	"github.com/burik666/yagostatus/pkg/executor"
-	_ "github.com/burik666/yagostatus/widgets"
 	"github.com/burik666/yagostatus/ygs"
+
+	_ "github.com/burik666/yagostatus/plugins"
+	_ "github.com/burik666/yagostatus/widgets"
 
 	"go.i3wm.org/i3/v4"
 )
