@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -22,6 +23,15 @@ func parse(data []byte, workdir string, source string) (*Config, error) {
 	config := Config{}
 	config.Signals.StopSignal = syscall.SIGUSR1
 	config.Signals.ContSignal = syscall.SIGCONT
+
+	if config.Plugins.Path == "" {
+		wd, err := os.Getwd()
+		if err != nil {
+			return nil, err
+		}
+
+		config.Plugins.Path = wd
+	}
 
 	if err := yaml.UnmarshalStrict(data, &config); err != nil {
 		return nil, trimYamlErr(err, false)
