@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"reflect"
 	"runtime/debug"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -31,6 +32,7 @@ type widgetContainer struct {
 	config   config.WidgetConfig
 	ch       chan []ygs.I3BarBlock
 	logger   ygs.Logger
+	m        sync.RWMutex
 }
 
 // YaGoStatus is the main struct.
@@ -115,18 +117,26 @@ func (status *YaGoStatus) addWidget(wcfg config.WidgetConfig) {
 	})()
 }
 
-func (status *YaGoStatus) processWidgetEvents(wi int, outputIndex int, event ygs.I3BarClickEvent) error {
+func (status *YaGoStatus) processWidgetEvents(wi int, block ygs.I3BarBlock, event ygs.I3BarClickEvent) error {
 	defer (func() {
 		if r := recover(); r != nil {
 			status.widgets[wi].logger.Errorf("widget event panic: %s", r)
 			debug.PrintStack()
-			status.widgets[wi].output = []ygs.I3BarBlock{{
+
+			status.widgets[wi].ch <- []ygs.I3BarBlock{{
 				FullText: "widget panic",
 				Color:    "#ff0000",
 			}}
 		}
 
-		if err := status.widgets[wi].instance.Event(event, status.widgets[wi].output); err != nil {
+		status.widgets[wi].m.Lock()
+
+		blocks := make([]ygs.I3BarBlock, len(status.widgets[wi].output))
+		copy(blocks, status.widgets[wi].output)
+
+		status.widgets[wi].m.Unlock()
+
+		if err := status.widgets[wi].instance.Event(event, blocks); err != nil {
 			status.widgets[wi].logger.Errorf("Failed to process widget event: %s", err)
 		}
 	})()
@@ -159,10 +169,6 @@ func (status *YaGoStatus) processWidgetEvents(wi int, outputIndex int, event ygs
 			)
 
 			exc.AddEnv(widgetEvent.Env...)
-
-			block := status.widgets[wi].output[outputIndex]
-			block.Name = event.Name
-			block.Instance = event.Instance
 
 			exc.AddEnv(block.Env("")...)
 
@@ -225,7 +231,9 @@ func (status *YaGoStatus) addWidgetOutput(wi int, blocks []ygs.I3BarBlock) {
 		output[blockIndex] = block
 	}
 
+	status.widgets[wi].m.Lock()
 	status.widgets[wi].output = output
+	status.widgets[wi].m.Unlock()
 
 	status.upd <- wi
 }
@@ -255,28 +263,51 @@ func (status *YaGoStatus) eventReader() error {
 			continue
 		}
 
-		for wi := range status.widgets {
-			for outputIndex, output := range status.widgets[wi].output {
-				if (event.Name != "" && event.Name == output.Name) && (event.Instance != "" && event.Instance == output.Instance) {
-					e := event
-					e.Name = strings.Join(strings.Split(e.Name, "-")[2:], "-")
-					e.Instance = strings.Join(strings.Split(e.Instance, "-")[3:], "-")
+		go func(event ygs.I3BarClickEvent) {
+			wi, name, err := splitName(event.Name)
+			if err != nil {
+				status.logger.Errorf("failed to parse event name '%s': %s", event.Name, err)
 
-					if err := status.processWidgetEvents(wi, outputIndex, e); err != nil {
-						status.widgets[wi].logger.Errorf("event error: %s", err)
+				return
+			}
 
-						status.widgets[wi].output[outputIndex] = ygs.I3BarBlock{
-							FullText: fmt.Sprintf("event error: %s", err.Error()),
-							Color:    "#ff0000",
-							Name:     event.Name,
-							Instance: event.Instance,
-						}
-					}
+			_, oi, instance, err := splitInstance(event.Instance)
+			if err != nil {
+				status.logger.Errorf("failed to parse event instance '%s': %s", event.Name, err)
 
-					break
+				return
+			}
+
+			e := event
+			e.Name = name
+			e.Instance = instance
+
+			status.widgets[wi].m.RLock()
+			if len(status.widgets[wi].output) < oi {
+				status.widgets[wi].m.RUnlock()
+
+				return
+			}
+
+			block := status.widgets[wi].output[oi]
+			status.widgets[wi].m.RUnlock()
+
+			if (event.Name != "" && event.Name == block.Name) && (event.Instance != "" && event.Instance == block.Instance) {
+				block.Name = e.Name
+				block.Instance = e.Instance
+
+				if err := status.processWidgetEvents(wi, block, e); err != nil {
+					status.widgets[wi].logger.Errorf("event error: %s", err)
+
+					status.widgets[wi].ch <- []ygs.I3BarBlock{{
+						FullText: fmt.Sprintf("event error: %s", err.Error()),
+						Color:    "#ff0000",
+						Name:     event.Name,
+						Instance: event.Instance,
+					}}
 				}
 			}
-		}
+		}(event)
 	}
 
 	return nil
@@ -362,7 +393,9 @@ func (status *YaGoStatus) Run() error {
 
 			for wi := range status.widgets {
 				if checkWorkspaceConditions(status.widgets[wi].config.Workspaces, status.visibleWorkspaces) {
+					status.widgets[wi].m.RLock()
 					result = append(result, status.widgets[wi].output...)
+					status.widgets[wi].m.RUnlock()
 				}
 			}
 
@@ -541,4 +574,31 @@ func checkWorkspaceConditions(conditions []string, values []string) bool {
 	}
 
 	return len(conditions) == pass
+}
+
+func splitName(name string) (int, string, error) {
+	parts := strings.SplitN(name, "-", 3)
+
+	wi, err := strconv.ParseInt(parts[1], 10, 64)
+	if err != nil {
+		return 0, "", err
+	}
+
+	return int(wi), parts[2], nil
+}
+
+func splitInstance(name string) (int, int, string, error) {
+	parts := strings.SplitN(name, "-", 4)
+
+	wi, err := strconv.ParseInt(parts[1], 10, 64)
+	if err != nil {
+		return 0, 0, "", err
+	}
+
+	oi, err := strconv.ParseInt(parts[2], 10, 64)
+	if err != nil {
+		return 0, 0, "", err
+	}
+
+	return int(wi), int(oi), parts[3], nil
 }
