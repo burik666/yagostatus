@@ -320,15 +320,16 @@ func (status *YaGoStatus) eventReader() error {
 func (status *YaGoStatus) Run() error {
 	status.upd = make(chan int)
 
-	status.updateWorkspaces()
-
 	go (func() {
+		status.updateWorkspaces()
+
 		recv := i3.Subscribe(i3.WorkspaceEventType)
 		for recv.Next() {
 			e := recv.Event().(*i3.WorkspaceEvent)
 			if e.Change == "empty" {
 				continue
 			}
+
 			status.updateWorkspaces()
 			status.upd <- -1
 		}
