@@ -28,9 +28,11 @@ type NewWidgetFunc = func(params interface{}, l Logger) (Widget, error)
 
 // RegisterWidget registers widget.
 func RegisterWidget(rw WidgetSpec) error {
-	def := reflect.ValueOf(rw.DefaultParams)
-	if def.Kind() != reflect.Struct {
-		return fmt.Errorf("defaultParams should be a struct")
+	if rw.DefaultParams != nil {
+		def := reflect.ValueOf(rw.DefaultParams)
+		if def.Kind() != reflect.Struct {
+			return fmt.Errorf("defaultParams should be a struct")
+		}
 	}
 
 	if _, loaded := rs.LoadOrStore("widget_"+rw.Name, rw); loaded {

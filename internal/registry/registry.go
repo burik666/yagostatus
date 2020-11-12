@@ -22,6 +22,9 @@ func NewWidget(widgetConfig config.WidgetConfig, wlogger ygs.Logger) (ygs.Widget
 	}
 
 	widget := wi.(ygs.WidgetSpec)
+	if widget.DefaultParams == nil {
+		return widget.NewFunc(nil, wlogger)
+	}
 
 	def := reflect.ValueOf(widget.DefaultParams)
 
