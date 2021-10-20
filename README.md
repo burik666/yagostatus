@@ -1,11 +1,16 @@
-# YaGoStatus
+# YaGoStatus (denysvitali's fork)
 Yet Another i3status replacement written in Go.
 
-[![GitHub release](https://img.shields.io/github/release/burik666/yagostatus.svg)](https://github.com/burik666/yagostatus)
-[![GitHub license](https://img.shields.io/github/license/burik666/yagostatus.svg)](https://github.com/burik666/yagostatus/blob/master/LICENSE)
+[![GitHub release](https://img.shields.io/github/release/denysvitali/yagostatus.svg)](https://github.com/denysvitali/yagostatus)
+[![GitHub license](https://img.shields.io/github/license/denysvitali/yagostatus.svg)](https://github.com/denysvitali/yagostatus/blob/master/LICENSE)
 
 
-[![yagostatus.gif](https://raw.githubusercontent.com/wiki/burik666/yagostatus/yagostatus.gif)](https://github.com/burik666/yagostatus/wiki/Conky)
+[![Example of YagoStatus running on my computer](https://raw.githubusercontent.com/wiki/denysvitali/yagostatus/screenshots/1.png)](https://github.com/denysvitali/yagostatus/wiki/Screenshots)
+
+## Description
+
+This is a fork of [@burik666](https://github.com/burik666)'s YaGoStatus, an i3status
+replacement written in Go.
 
 ## Features
 - Instant and independent updating of widgets.
@@ -20,8 +25,8 @@ Yet Another i3status replacement written in Go.
 
 ## Installation
 
-    go get github.com/burik666/yagostatus
-    cp $GOPATH/src/github.com/burik666/yagostatus/yagostatus.yml ~/.config/i3/yagostatus.yml
+    go get github.com/denysvitali/yagostatus
+    cp $GOPATH/src/github.com/denysvitali/yagostatus/yagostatus.yml ~/.config/i3/yagostatus.yml
 
 Replace `status_command` to `~/go/bin/yagostatus --config ~/.config/i3/yagostatus.yml` in your i3 config file.
 
@@ -49,7 +54,7 @@ widgets:
         ]
     events:
       - button: 1
-        command: xdg-open https://github.com/burik666/yagostatus/
+        command: xdg-open https://github.com/denysvitali/yagostatus/
 
   - widget: wrapper
     command: /usr/bin/i3status
