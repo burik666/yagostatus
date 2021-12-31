@@ -12,11 +12,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/burik666/yagostatus/internal/pkg/config"
-	"github.com/burik666/yagostatus/internal/pkg/executor"
-	"github.com/burik666/yagostatus/internal/pkg/logger"
-	_ "github.com/burik666/yagostatus/widgets"
-	"github.com/burik666/yagostatus/ygs"
+	"github.com/denysvitali/yagostatus/internal/pkg/config"
+	"github.com/denysvitali/yagostatus/internal/pkg/executor"
+	"github.com/denysvitali/yagostatus/internal/pkg/logger"
+	_ "github.com/denysvitali/yagostatus/widgets"
+	"github.com/denysvitali/yagostatus/ygs"
 
 	"go.i3wm.org/i3/v4"
 )

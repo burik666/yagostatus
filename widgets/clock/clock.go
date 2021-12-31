@@ -1,11 +1,11 @@
 package clock
 
 import (
-	"github.com/burik666/yagostatus/widgets/blank"
+	"github.com/denysvitali/yagostatus/widgets/blank"
 	"time"
 
-	"github.com/burik666/yagostatus/internal/pkg/logger"
-	"github.com/burik666/yagostatus/ygs"
+	"github.com/denysvitali/yagostatus/internal/pkg/logger"
+	"github.com/denysvitali/yagostatus/ygs"
 )
 
 // ClockWidgetParams are widget parameters.

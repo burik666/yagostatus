@@ -2,11 +2,11 @@ package cpu
 
 import (
 	"fmt"
-	"github.com/burik666/yagostatus/widgets/blank"
+	"github.com/denysvitali/yagostatus/widgets/blank"
 	"time"
 
-	"github.com/burik666/yagostatus/internal/pkg/logger"
-	"github.com/burik666/yagostatus/ygs"
+	"github.com/denysvitali/yagostatus/internal/pkg/logger"
+	"github.com/denysvitali/yagostatus/ygs"
 	"github.com/shirou/gopsutil/cpu"
 )
 
@@ -60,7 +60,7 @@ func (w *Widget) Run(c chan<- []ygs.I3BarBlock) error {
 	if w.params.Format == "" {
 		w.params.Format = "CPU: %.2f"
 	}
-	
+
 	w.loop(c)
 	ticker := time.NewTicker(time.Duration(w.params.Interval) * time.Second)
 	for range ticker.C {

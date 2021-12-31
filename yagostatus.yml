@@ -9,7 +9,7 @@ widgets:
       ]
     events:
       - button: 1
-        command: xdg-open https://github.com/burik666/yagostatus/
+        command: xdg-open https://github.com/denysvitali/yagostatus/
 
   - widget: wrapper
     command: /usr/bin/i3status

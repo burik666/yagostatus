@@ -2,12 +2,12 @@ package clock
 
 import (
 	"fmt"
-	"github.com/burik666/yagostatus/widgets/blank"
+	"github.com/denysvitali/yagostatus/widgets/blank"
 	"strings"
 	"time"
 
-	"github.com/burik666/yagostatus/internal/pkg/logger"
-	"github.com/burik666/yagostatus/ygs"
+	"github.com/denysvitali/yagostatus/internal/pkg/logger"
+	"github.com/denysvitali/yagostatus/ygs"
 	"github.com/distatus/battery"
 )
 
@@ -55,14 +55,13 @@ func (w *Widget) getBattery() string {
 		)
 		return "N/A"
 	}
-	
+
 	if w.params.Format == "" {
 		w.params.Format = "%e"
 	}
-	
-	
+
 	batt := batteries[w.params.Index]
-	
+
 	return formatBattery(w.params.Format, batt)
 }
 
@@ -77,9 +76,8 @@ func getVoltage(batt *battery.Battery) string {
 	return fmt.Sprintf("%.2f", batt.Voltage)
 }
 
-
 func getPercentage(batt *battery.Battery) string {
-	return fmt.Sprintf("%.2f", batt.Current/batt.Full * 100)
+	return fmt.Sprintf("%.2f", batt.Current/batt.Full*100)
 }
 
 func getStateEmoji(batt *battery.Battery) string {

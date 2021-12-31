@@ -1,12 +1,12 @@
 package wifi
 
 import (
-	"github.com/burik666/yagostatus/widgets/blank"
+	"github.com/denysvitali/yagostatus/widgets/blank"
 	"strings"
 	"time"
 
-	"github.com/burik666/yagostatus/internal/pkg/logger"
-	"github.com/burik666/yagostatus/ygs"
+	"github.com/denysvitali/yagostatus/internal/pkg/logger"
+	"github.com/denysvitali/yagostatus/ygs"
 	"github.com/mdlayher/wifi"
 )
 
@@ -74,7 +74,7 @@ func (w *Widget) getWifi() string {
 		}
 		w.params.c = client
 	}
-	
+
 	if w.params.iface == nil {
 		interfaces, err := w.params.c.Interfaces()
 		if err != nil {
@@ -89,7 +89,7 @@ func (w *Widget) getWifi() string {
 				break
 			}
 		}
-		
+
 		if w.params.iface == nil {
 			w.params.logger.Errorf("wifi interface not found")
 			return ""
@@ -100,7 +100,7 @@ func (w *Widget) getWifi() string {
 	if err != nil {
 		return "Not connected"
 	}
-	
+
 	return formatBSS(w.params.Format, bss)
 
 }

@@ -3,14 +3,14 @@ package weather
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/burik666/yagostatus/widgets/blank"
+	"github.com/denysvitali/yagostatus/widgets/blank"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
-	"github.com/burik666/yagostatus/internal/pkg/logger"
-	"github.com/burik666/yagostatus/ygs"
+	"github.com/denysvitali/yagostatus/internal/pkg/logger"
+	"github.com/denysvitali/yagostatus/ygs"
 )
 
 // WidgetParams are widget parameters.
@@ -75,12 +75,12 @@ type Snow struct {
 }
 
 type Sys struct {
-	Type    int    `json:"type"`
-	Id      int `json:"id"`
+	Type    int     `json:"type"`
+	Id      int     `json:"id"`
 	Message float32 `json:"message"`
-	Country string `json:"country"`
-	Sunrise int `json:"sunrise"`
-	Sunset  int `json:"sunset"`
+	Country string  `json:"country"`
+	Sunrise int     `json:"sunrise"`
+	Sunset  int     `json:"sunset"`
 }
 
 type Result struct {

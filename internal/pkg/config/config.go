@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/burik666/yagostatus/ygs"
+	"github.com/denysvitali/yagostatus/ygs"
 )
 
 // Config represents the main configuration.
