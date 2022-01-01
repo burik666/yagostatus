@@ -50,7 +50,7 @@ func (w *Widget) loop(c chan<- []ygs.I3BarBlock) {
 	res := []ygs.I3BarBlock{
 		{},
 	}
-	res[0].FullText = w.status()
+	res[0].FullText = fmt.Sprintf(w.params.Format, w.status())
 	c <- res
 }
 
@@ -67,6 +67,26 @@ func (w *Widget) Run(c chan<- []ygs.I3BarBlock) error {
 	}
 
 	return nil
+}
+
+func getTechnology(tech int) string {
+	switch mb.AccessTechnology(tech) {
+	case mb.EVDOAAt, mb.EVDOBAt, mb.EVDO0At:
+		return "E"
+	case mb.GPRSAt:
+		return "G"
+	case mb.GSMAt, mb.GSMCompactAt:
+		return "GSM"
+	case mb.HSPAAt, mb.HSDPAAt, mb.HSUPAAt:
+		return "H+"
+	case mb.OneXRTTAt:
+		return "3G"
+	case mb.LTEAt:
+		return "4G"
+	case mb.FiveGNRAt:
+		return "5G"
+	}
+	return "?"
 }
 
 func (w *Widget) status() string {
@@ -87,6 +107,10 @@ func (w *Widget) status() string {
 		return "ERR"
 	}
 
-	return fmt.Sprintf("%s - %.0f%%", status.OperatorName, status.SignalQuality.Value)
+	return fmt.Sprintf("%s (%s) - %.0f%%",
+		status.OperatorName,
+		getTechnology(status.AccessTechnologies),
+		status.SignalQuality.Value,
+	)
 
 }

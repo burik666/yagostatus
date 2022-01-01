@@ -10,8 +10,8 @@ github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/denysvitali/battery v0.10.1-0.20201020174607-42f7f0067437 h1:hgRebCDdkALJR44eIVt9KsBVNUn55gvyWSMg9xKsFoU=
 github.com/denysvitali/battery v0.10.1-0.20201020174607-42f7f0067437/go.mod h1:STnSvFLX//eEpkaN7qWRxCWxrWOcssTDgnG4yqq9BRE=
-github.com/denysvitali/go-mobilebroadband v0.0.0-20211231174824-8622b112d4c8 h1:NcDcjL+R0ruhsNNHqhqFzoiMN/gQUQ3nnsj6fjXRDIE=
-github.com/denysvitali/go-mobilebroadband v0.0.0-20211231174824-8622b112d4c8/go.mod h1:Zk9aERk/Tt6yrBIIS5Mz3wc+kyU1B+s6+zhj7xqRjWw=
+github.com/denysvitali/go-mobilebroadband v0.0.0-20220101153213-27a5c9400c04 h1:9qP5L5V6vjseHRThHvkOCYzHmzgkWQaWxRqsNvukq90=
+github.com/denysvitali/go-mobilebroadband v0.0.0-20220101153213-27a5c9400c04/go.mod h1:Zk9aERk/Tt6yrBIIS5Mz3wc+kyU1B+s6+zhj7xqRjWw=
 github.com/go-ole/go-ole v1.2.4 h1:nNBDSCOigTSiarFpYE9J/KtEA1IOW4CNeqT9TQDqCxI=
 github.com/go-ole/go-ole v1.2.4/go.mod h1:XCwSNxSkXRo4vlyPy93sltvi/qJq0jqQhjqQNIwKuxM=
 github.com/godbus/dbus/v5 v5.0.6 h1:mkgN1ofwASrYnJ5W6U/BxG15eXXXjirgZc7CLqkcaro=

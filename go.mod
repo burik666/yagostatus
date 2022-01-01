@@ -5,7 +5,7 @@ go 1.17
 replace github.com/distatus/battery v0.10.0 => github.com/denysvitali/battery v0.10.1-0.20201020174607-42f7f0067437
 
 require (
-	github.com/denysvitali/go-mobilebroadband v0.0.0-20211231174824-8622b112d4c8
+	github.com/denysvitali/go-mobilebroadband v0.0.0-20220101153213-27a5c9400c04
 	github.com/distatus/battery v0.10.0
 	github.com/mdlayher/wifi v0.0.0-20200527114002-84f0b9457fdd
 	github.com/shirou/gopsutil v2.20.9+incompatible
