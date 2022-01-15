@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/burik666/yagostatus/internal/pkg/logger"
+	"github.com/denysvitali/yagostatus/internal/pkg/logger"
 	"gopkg.in/yaml.v2"
 )
 

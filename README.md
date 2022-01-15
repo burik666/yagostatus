@@ -1,4 +1,4 @@
-# YaGoStatus (denysvitali's fork)
+# YagoStatus (denysvitali's fork)
 Yet Another i3status replacement written in Go.
 
 [![GitHub release](https://img.shields.io/github/release/denysvitali/yagostatus.svg)](https://github.com/denysvitali/yagostatus)
@@ -9,7 +9,7 @@ Yet Another i3status replacement written in Go.
 
 ## Description
 
-This is a fork of [@burik666](https://github.com/burik666)'s YaGoStatus, an i3status
+This is a fork of [@burik666](https://github.com/burik666)'s YagoStatus, an i3status
 replacement written in Go.
 
 ## Features
@@ -30,9 +30,10 @@ replacement written in Go.
 
 Replace `status_command` to `~/go/bin/yagostatus --config ~/.config/i3/yagostatus.yml` in your i3 config file.
 
-If you using Sway add the `--sway` parameter.
+If you are using Sway, add the `--sway` parameter.
 
 ### Troubleshooting
+
 Yagostatus outputs error messages in stderr, you can log them by redirecting stderr to a file.
 
 `status_command exec ~/go/bin/yagostatus --config ~/.config/i3/yagostatus.yml 2> /tmp/yagostatus.log`
@@ -48,7 +49,7 @@ widgets:
     blocks: >
         [
             {
-                "full_text": "YaGoStatus",
+                "full_text": "YagoStatus",
                 "color": "#2e9ef4"
             }
         ]
@@ -340,7 +341,7 @@ Requires [jq](https://stedolan.github.com/jq/) for json parsing.
             }
         ]
   - widget: exec
-    command: curl -s 'http://api.openweathermap.org/data/2.5/weather?q=London,uk&units=metric&appid=<APPID>'|jq .main.temp
+    command: curl -s 'https://api.openweathermap.org/data/2.5/weather?q=London,uk&units=metric&appid=<APPID>'|jq .main.temp
     interval: 300
     templates: >
         [{
@@ -451,5 +452,4 @@ end
 
 ## License
 
-YaGoStatus is licensed under the GNU GPLv3 License.
-
+YagoStatus is licensed under the GNU GPLv3 License.

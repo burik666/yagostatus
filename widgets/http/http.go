@@ -5,15 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/burik666/yagostatus/widgets/blank"
+	"github.com/denysvitali/yagostatus/widgets/blank"
 	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"sync"
 
-	"github.com/burik666/yagostatus/internal/pkg/logger"
-	"github.com/burik666/yagostatus/ygs"
+	"github.com/denysvitali/yagostatus/internal/pkg/logger"
+	"github.com/denysvitali/yagostatus/ygs"
 
 	"golang.org/x/net/websocket"
 )

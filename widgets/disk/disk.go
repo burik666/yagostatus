@@ -2,12 +2,12 @@ package disk
 
 import (
 	"fmt"
-	"github.com/burik666/yagostatus/widgets/blank"
+	"github.com/denysvitali/yagostatus/widgets/blank"
 	"syscall"
 	"time"
 
-	"github.com/burik666/yagostatus/internal/pkg/logger"
-	"github.com/burik666/yagostatus/ygs"
+	"github.com/denysvitali/yagostatus/internal/pkg/logger"
+	"github.com/denysvitali/yagostatus/ygs"
 )
 
 type WidgetParams struct {
@@ -87,5 +87,5 @@ func (w *Widget) getDisk() string {
 		return "N/A"
 	}
 
-	return fmt.Sprintf(w.params.Format, ByteCountIEC(int64(statFS.Bavail) * statFS.Bsize))
+	return fmt.Sprintf(w.params.Format, ByteCountIEC(int64(statFS.Bavail)*statFS.Bsize))
 }

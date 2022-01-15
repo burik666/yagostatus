@@ -2,15 +2,15 @@ package brightness
 
 import (
 	"fmt"
-	"github.com/burik666/yagostatus/widgets/blank"
+	"github.com/denysvitali/yagostatus/widgets/blank"
 	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/burik666/yagostatus/internal/pkg/logger"
-	"github.com/burik666/yagostatus/ygs"
+	"github.com/denysvitali/yagostatus/internal/pkg/logger"
+	"github.com/denysvitali/yagostatus/ygs"
 )
 
 const NotAvailable = "N/A"
@@ -73,22 +73,21 @@ func readDevice(devName string, property string) (int, error) {
 	if err != nil {
 		return -1, err
 	}
-	
-	
+
 	v, err := ioutil.ReadAll(f)
 	if err != nil {
 		return -1, err
 	}
-	
+
 	strVal := strings.Replace(string(v), "\n", "", -1)
-	
+
 	value, err := strconv.Atoi(strVal)
 	if err != nil {
 		return -1, err
 	}
-	
+
 	return value, nil
-	
+
 }
 
 func (w *Widget) getBrightness() string {
@@ -97,15 +96,14 @@ func (w *Widget) getBrightness() string {
 		w.params.logger.Errorf("unable to get brightness: %v", err)
 		return NotAvailable
 	}
-	
+
 	max, err := readDevice(w.params.Device, "max_brightness")
 	if err != nil {
 		w.params.logger.Errorf("unable to get max brightness: %v", err)
 		return NotAvailable
 	}
 
-
-	return formatBrightness(w.params.Format, float64(actual)/float64(max) * 100)
+	return formatBrightness(w.params.Format, float64(actual)/float64(max)*100)
 
 }
 

@@ -3,9 +3,9 @@ package static
 import (
 	"encoding/json"
 	"errors"
-	"github.com/burik666/yagostatus/widgets/blank"
-	"github.com/burik666/yagostatus/internal/pkg/logger"
-	"github.com/burik666/yagostatus/ygs"
+	"github.com/denysvitali/yagostatus/widgets/blank"
+	"github.com/denysvitali/yagostatus/internal/pkg/logger"
+	"github.com/denysvitali/yagostatus/ygs"
 )
 
 // StaticWidgetParams are widget parameters.

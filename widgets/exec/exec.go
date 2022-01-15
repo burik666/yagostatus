@@ -3,17 +3,17 @@ package exec
 import (
 	"errors"
 	"fmt"
-	"github.com/burik666/yagostatus/widgets/blank"
+	"github.com/denysvitali/yagostatus/widgets/blank"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
 
-	"github.com/burik666/yagostatus/internal/pkg/executor"
-	"github.com/burik666/yagostatus/internal/pkg/logger"
-	"github.com/burik666/yagostatus/internal/pkg/signals"
-	"github.com/burik666/yagostatus/ygs"
+	"github.com/denysvitali/yagostatus/internal/pkg/executor"
+	"github.com/denysvitali/yagostatus/internal/pkg/logger"
+	"github.com/denysvitali/yagostatus/internal/pkg/signals"
+	"github.com/denysvitali/yagostatus/ygs"
 )
 
 // ExecWidgetParams are widget parameters.

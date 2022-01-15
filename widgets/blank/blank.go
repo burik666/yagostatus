@@ -2,8 +2,8 @@
 package blank
 
 import (
-	"github.com/burik666/yagostatus/internal/pkg/logger"
-	"github.com/burik666/yagostatus/ygs"
+	"github.com/denysvitali/yagostatus/internal/pkg/logger"
+	"github.com/denysvitali/yagostatus/ygs"
 )
 
 // BlankWidgetParams are widget parameters.

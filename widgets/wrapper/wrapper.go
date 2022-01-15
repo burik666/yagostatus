@@ -7,9 +7,9 @@ import (
 	"io"
 	"syscall"
 
-	"github.com/burik666/yagostatus/internal/pkg/executor"
-	"github.com/burik666/yagostatus/internal/pkg/logger"
-	"github.com/burik666/yagostatus/ygs"
+	"github.com/denysvitali/yagostatus/internal/pkg/executor"
+	"github.com/denysvitali/yagostatus/internal/pkg/logger"
+	"github.com/denysvitali/yagostatus/ygs"
 )
 
 // WrapperWidgetParams are widget parameters.

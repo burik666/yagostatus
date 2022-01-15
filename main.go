@@ -8,8 +8,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/burik666/yagostatus/internal/pkg/config"
-	"github.com/burik666/yagostatus/internal/pkg/logger"
+	"github.com/denysvitali/yagostatus/internal/pkg/config"
+	"github.com/denysvitali/yagostatus/internal/pkg/logger"
 )
 
 var builtinConfig = []byte(`
@@ -24,7 +24,7 @@ widgets:
       ]
     events:
       - button: 1
-        command: xdg-open https://github.com/burik666/yagostatus/
+        command: xdg-open https://github.com/denysvitali/yagostatus/
   - widget: wrapper
     command: /usr/bin/i3status
   - widget: clock
