@@ -2,7 +2,7 @@ module github.com/denysvitali/yagostatus
 
 go 1.17
 
-replace github.com/distatus/battery v0.10.0 => github.com/denysvitali/battery v0.10.1-0.20201020174607-42f7f0067437
+replace github.com/distatus/battery v0.10.0 => github.com/denysvitali/battery v0.10.1-0.20220115135326-d31c17970ec6
 
 require (
 	github.com/denysvitali/go-mobilebroadband v0.0.0-20220101153213-27a5c9400c04
@@ -24,4 +24,5 @@ require (
 	github.com/mdlayher/netlink v1.1.1 // indirect
 	golang.org/x/sys v0.0.0-20201009025420-dfb3f7c4e634 // indirect
 	howett.net/plist v0.0.0-20181124034731-591f970eefbb // indirect
+	mrogalski.eu/go/pulseaudio v0.0.0-20200511091429-8449222912dd // indirect
 )

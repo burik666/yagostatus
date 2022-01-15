@@ -8,8 +8,8 @@ github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d h1:G0m3OIz70MZUW
 github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d/go.mod h1:3eOhrUMpNV+6aFIbp5/iudMxNCF27Vw2OZgy4xEx0Fg=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/denysvitali/battery v0.10.1-0.20201020174607-42f7f0067437 h1:hgRebCDdkALJR44eIVt9KsBVNUn55gvyWSMg9xKsFoU=
-github.com/denysvitali/battery v0.10.1-0.20201020174607-42f7f0067437/go.mod h1:STnSvFLX//eEpkaN7qWRxCWxrWOcssTDgnG4yqq9BRE=
+github.com/denysvitali/battery v0.10.1-0.20220115135326-d31c17970ec6 h1:mNKsyxBlp/KaIae8jHBYW8FvLWIx6/7inKZ6KB0xliU=
+github.com/denysvitali/battery v0.10.1-0.20220115135326-d31c17970ec6/go.mod h1:CNRk6ygPhmyGC0N24HtpShAV5FI0RJkARqfbXkxITnM=
 github.com/denysvitali/go-mobilebroadband v0.0.0-20220101153213-27a5c9400c04 h1:9qP5L5V6vjseHRThHvkOCYzHmzgkWQaWxRqsNvukq90=
 github.com/denysvitali/go-mobilebroadband v0.0.0-20220101153213-27a5c9400c04/go.mod h1:Zk9aERk/Tt6yrBIIS5Mz3wc+kyU1B+s6+zhj7xqRjWw=
 github.com/go-ole/go-ole v1.2.4 h1:nNBDSCOigTSiarFpYE9J/KtEA1IOW4CNeqT9TQDqCxI=
@@ -86,3 +86,5 @@ gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c h1:dUUwHk2QECo/6vqA44rthZ8ie
 gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
 howett.net/plist v0.0.0-20181124034731-591f970eefbb h1:jhnBjNi9UFpfpl8YZhA9CrOqpnJdvzuiHsl/dnxl11M=
 howett.net/plist v0.0.0-20181124034731-591f970eefbb/go.mod h1:vMygbs4qMhSZSc4lCUl2OEE+rDiIIJAIdR4m7MiMcm0=
+mrogalski.eu/go/pulseaudio v0.0.0-20200511091429-8449222912dd h1:yEN6CTPZV70rUFqpZ5SqJn15JK5iKiSL4Gdw2gJ98ug=
+mrogalski.eu/go/pulseaudio v0.0.0-20200511091429-8449222912dd/go.mod h1:C3V0v+gsiHHbMtFJvwozjNVdPJZw9oUxlRTVc619wSU=
