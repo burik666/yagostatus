@@ -43,7 +43,8 @@ func NewWidget(params interface{}, wlogger logger.Logger) (ygs.Widget, error) {
 
 func (w *Widget) getBattery() string {
 	batteries, err := battery.GetAll()
-	if err != nil {
+	_, isErrFatal := err.(battery.ErrFatal)
+	if isErrFatal {
 		w.params.logger.Errorf("unable to get batteries: %v", err)
 		return "N/A"
 	}
@@ -61,7 +62,9 @@ func (w *Widget) getBattery() string {
 	}
 
 	batt := batteries[w.params.Index]
-
+	if batt == nil {
+		return "N/A"
+	}
 	return formatBattery(w.params.Format, batt)
 }
 
@@ -90,8 +93,8 @@ func getStateEmoji(batt *battery.Battery) string {
 		return "🔋"
 	case battery.Empty:
 		return "😥"
-	case battery.NotCharging:
-		return "❌"
+	//case battery.NotCharging:
+	//	return "❌"
 	case battery.Unknown:
 		return "❓"
 	}
