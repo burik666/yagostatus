@@ -3,13 +3,13 @@ package main
 
 import (
 	"flag"
-	"log"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/burik666/yagostatus/internal/pkg/config"
-	"github.com/burik666/yagostatus/internal/pkg/logger"
+	"github.com/burik666/yagostatus/internal/config"
+	"github.com/burik666/yagostatus/internal/logger"
 )
 
 var builtinConfig = []byte(`
@@ -38,7 +38,7 @@ widgets:
 `)
 
 func main() {
-	logger := logger.New(log.Ldate + log.Ltime + log.Lshortfile)
+	logger := logger.New()
 
 	var configFile string
 
@@ -46,49 +46,55 @@ func main() {
 
 	versionFlag := flag.Bool("version", false, "print version information and exit")
 	swayFlag := flag.Bool("sway", false, "set it when using sway")
+	dumpConfigFlag := flag.Bool("dump", false, "dump parsed config file to stdout")
 
 	flag.Parse()
 
 	if *versionFlag {
 		logger.Infof("YaGoStatus %s", Version)
+
 		return
 	}
 
-	var cfg *config.Config
+	var initErrors []error
 
-	var cfgError, err error
-
-	if configFile == "" {
-		cfg, cfgError = config.LoadFile("yagostatus.yml")
-		if os.IsNotExist(cfgError) {
-			cfgError = nil
-
-			cfg, err = config.Parse(builtinConfig, "builtin")
-			if err != nil {
-				logger.Errorf("Failed to parse builtin config: %s", err)
-				os.Exit(1)
-			}
-		}
-
-		if cfgError != nil {
-			cfg = &config.Config{}
-		}
-	} else {
-		cfg, cfgError = config.LoadFile(configFile)
-		if cfgError != nil {
-			cfg = &config.Config{}
-		}
-	}
-
-	yaGoStatus, err := NewYaGoStatus(*cfg, *swayFlag, logger)
-	if err != nil {
-		logger.Errorf("Failed to create yagostatus instance: %s", err)
-		os.Exit(1)
-	}
-
+	cfg, cfgError := loadConfig(configFile)
 	if cfgError != nil {
 		logger.Errorf("Failed to load config: %s", cfgError)
-		yaGoStatus.errorWidget(cfgError.Error())
+		initErrors = append(initErrors, cfgError)
+	}
+
+	if cfg != nil {
+		logger.Infof("using config: %s", cfg.File)
+	} else {
+		cfg = &config.Config{}
+	}
+
+	if err := config.LoadPlugins(*cfg, logger); err != nil {
+		logger.Errorf("Failed to load plugins: %s", err)
+		initErrors = append(initErrors, err)
+	}
+
+	if *dumpConfigFlag {
+		b, err := config.Dump(cfg)
+		if err != nil {
+			logger.Errorf("Failed to dump config: %s", err)
+			os.Exit(1)
+		}
+
+		_, _ = os.Stdout.Write(b)
+		os.Exit(0)
+	}
+
+	if err := config.InitPlugins(logger); err != nil {
+		logger.Errorf("Failed to init plugins: %s", err)
+		initErrors = append(initErrors, err)
+	}
+
+	yaGoStatus := NewYaGoStatus(*cfg, *swayFlag, logger)
+
+	for _, err := range initErrors {
+		yaGoStatus.errorWidget(err.Error())
 	}
 
 	stopContSignals := make(chan os.Signal, 1)
@@ -107,7 +113,12 @@ func main() {
 	}()
 
 	shutdownsignals := make(chan os.Signal, 1)
-	signal.Notify(shutdownsignals, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	signal.Notify(shutdownsignals,
+		syscall.SIGINT,
+		syscall.SIGTERM,
+		syscall.SIGQUIT,
+		syscall.SIGPIPE,
+	)
 
 	go func() {
 		if err := yaGoStatus.Run(); err != nil {
@@ -118,9 +129,34 @@ func main() {
 
 	<-shutdownsignals
 
-	if err := yaGoStatus.Shutdown(); err != nil {
-		logger.Errorf("Failed to shutdown yagostatus: %s", err)
-	}
+	logger.Infof("shutdown")
+
+	config.ShutdownPlugins(logger)
+
+	yaGoStatus.Shutdown()
 
 	logger.Infof("exit")
+}
+
+func loadConfig(configFile string) (*config.Config, error) {
+	if configFile == "" {
+		configDir, err := os.UserConfigDir()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get config dir: %w", err)
+		}
+
+		cfg, err := config.LoadFile(configDir + "/yagostatus/yagostatus.yml")
+		if os.IsNotExist(err) {
+			cfg, err := config.LoadFile("yagostatus.yml")
+			if os.IsNotExist(err) {
+				return config.Parse(builtinConfig, "builtin")
+			}
+
+			return cfg, err
+		}
+
+		return cfg, err
+	}
+
+	return config.LoadFile(configFile)
 }

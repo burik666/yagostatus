@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/burik666/yagostatus/internal/pkg/logger"
 	"github.com/burik666/yagostatus/ygs"
 )
 
@@ -15,7 +14,7 @@ type StaticWidgetParams struct {
 
 // StaticWidget implements a static widget.
 type StaticWidget struct {
-	BlankWidget
+	ygs.BlankWidget
 
 	params StaticWidgetParams
 
@@ -23,11 +22,17 @@ type StaticWidget struct {
 }
 
 func init() {
-	ygs.RegisterWidget("static", NewStaticWidget, StaticWidgetParams{})
+	if err := ygs.RegisterWidget(ygs.WidgetSpec{
+		Name:          "static",
+		NewFunc:       NewStaticWidget,
+		DefaultParams: StaticWidgetParams{},
+	}); err != nil {
+		panic(err)
+	}
 }
 
 // NewStaticWidget returns a new StaticWidget.
-func NewStaticWidget(params interface{}, wlogger logger.Logger) (ygs.Widget, error) {
+func NewStaticWidget(params interface{}, wlogger ygs.Logger) (ygs.Widget, error) {
 	w := &StaticWidget{
 		params: params.(StaticWidgetParams),
 	}
@@ -46,5 +51,6 @@ func NewStaticWidget(params interface{}, wlogger logger.Logger) (ygs.Widget, err
 // Run returns configured blocks.
 func (w *StaticWidget) Run(c chan<- []ygs.I3BarBlock) error {
 	c <- w.blocks
+
 	return nil
 }

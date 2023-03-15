@@ -2,10 +2,11 @@
 Yet Another i3status replacement written in Go.
 
 [![GitHub release](https://img.shields.io/github/release/burik666/yagostatus.svg)](https://github.com/burik666/yagostatus)
+[![Build Status](https://cloud.drone.io/api/badges/burik666/yagostatus/status.svg)](https://cloud.drone.io/burik666/yagostatus)
 [![GitHub license](https://img.shields.io/github/license/burik666/yagostatus.svg)](https://github.com/burik666/yagostatus/blob/master/LICENSE)
 
 
-[![yagostatus.gif](https://raw.githubusercontent.com/wiki/burik666/yagostatus/yagostatus.gif)](https://github.com/burik666/yagostatus/wiki/Conky)
+![yagostatus.gif](https://raw.githubusercontent.com/wiki/burik666/yagostatus/yagostatus.gif)
 
 ## Features
 - Instant and independent updating of widgets.
@@ -13,26 +14,30 @@ Yet Another i3status replacement written in Go.
 - Shell scripting widgets and events handlers.
 - Wrapping other status programs (i3status, py3status, conky, etc.).
 - Different widgets on different workspaces.
-- [Snippets](https://github.com/burik666/ygs-snippets).
 - Templates for widgets outputs.
 - Update widget via http/websocket requests.
 - Update widget by POSIX Real-Time Signals (SIGRTMIN-SIGRTMAX).
+- [Snippets](https://github.com/burik666/ygs-snippets).
+- [Plugins](plugins).
 
 ## Installation
 
     go get github.com/burik666/yagostatus
-    cp $GOPATH/src/github.com/burik666/yagostatus/yagostatus.yml ~/.config/i3/yagostatus.yml
+    mkdir ~/.config/yagostatus
+    cp $GOPATH/src/github.com/burik666/yagostatus/yagostatus.yml ~/.config/yagostatus/yagostatus.yml
 
-Replace `status_command` to `~/go/bin/yagostatus --config ~/.config/i3/yagostatus.yml` in your i3 config file.
+Replace `status_command` to `~/go/bin/yagostatus --config ~/.config/yagostatus/yagostatus.yml` in your i3 config file.
 
 If you using Sway add the `--sway` parameter.
 
 ### Troubleshooting
 Yagostatus outputs error messages in stderr, you can log them by redirecting stderr to a file.
 
-`status_command exec ~/go/bin/yagostatus --config ~/.config/i3/yagostatus.yml 2> /tmp/yagostatus.log`
+`status_command exec ~/go/bin/yagostatus --config /path/to/yagostatus.yml 2> /tmp/yagostatus.log`
 
 ## Configuration
+
+If `--config` is not specified, yagostatus is looking for `yagostatus.yml` in `$HOME/.config/yagostatus` (or `$XDG_HOME_CONFIG/yagostatus` if set) or in the current working directory.
 
 Yagostatus uses a configuration file in the yaml format.
 
@@ -102,10 +107,11 @@ Example:
     * `modifiers` - List of X11 modifiers condition.
     * `command` - Command to execute (via `sh -c`).
     Сlick_event json will be written to stdin.
-    Also env variables are available: `$I3_NAME`, `$I3_INSTANCE`, `$I3_BUTTON`, `$I3_MODIFIERS`, `$I3_X`, `$I3_Y`, `$I3_RELATIVE_X`, `$I3_RELATIVE_Y`, `$I3_WIDTH`, `$I3_HEIGHT`, `$I3_MODIFIERS`.
+    Also env variables are available: `$I3_NAME`, `$I3_INSTANCE`, `$I3_BUTTON`, `$I3_MODIFIERS`, `$I3_{X,Y}`, `$I3_OUTPUT_{X,Y}`, `$I3_RELATIVE_{X,Y}`, `$I3_{WIDTH,HEIGHT}`, `$I3_MODIFIERS`.
     The clicked widget fields are available as ENV variables with the prefix `I3_` (example:` $ I3_full_text`).
     * `workdir` - Set a working directory.
-    * `output_format` - The command output format (none, text, json, auto) (default: `none`).
+    * `env` - Set environment variables.
+    * `output_format` - The command output format (`none`, `text`, `json`, `auto`) (default: `none`).
     * `name` - Filter by `name` for widgets with multiple blocks (default: empty).
     * `instance` - Filter by `instance` for widgets with multiple blocks (default: empty).
     * `override` - If `true`, previously defined events with the same `button`, `modifier`, `name` and `instance` will be ignored (default: `false`)
@@ -192,11 +198,12 @@ This widget runs the command at the specified interval.
 
 - `command` - Command to execute (via `sh -c`).
 - `workdir` - Set a working directory.
+- `env` - Set environment variables.
 - `interval` - Update interval in seconds (`0` to run once at start; `-1` for loop without delay; default: `0`).
 - `retry` - Retry interval in seconds if command failed (default: none).
 - `silent` - Don't show error widget if command failed (default: `false`).
 - `events_update` - Update widget if an event occurred (default: `false`).
-- `output_format` - The command output format (none, text, json, auto) (default: `auto`).
+- `output_format` - The command output format (`none`, `text`, `json`, `auto`) (default: `auto`).
 - `signal` - SIGRTMIN offset to update widget. Should be between 0 and `SIGRTMIN`-`SIGRTMAX`.
 
 The current widget fields are available as ENV variables with the prefix `I3_` (example: `$I3_full_text`).
@@ -214,6 +221,7 @@ See: https://i3wm.org/docs/i3bar-protocol.html
 
 - `command` - Command to execute.
 - `workdir` - Set a working directory.
+- 'env' - Set environment variables.
 
 
 ### Widget `static`
@@ -281,33 +289,33 @@ This example shows how you can use custom fields.
 ### Volume control
 i3 config:
 ```
-bindsym XF86AudioLowerVolume exec amixer -c 1 -q set Master 1%-; exec pkill -SIGRTMIN+1 yagostatus
-bindsym XF86AudioRaiseVolume exec amixer -c 1 -q set Master 1%+; exec pkill -SIGRTMIN+1 yagostatus
-bindsym XF86AudioMute exec amixer -q set Master toggle; exec pkill -SIGRTMIN+1 yagostatus
+bindsym XF86AudioLowerVolume exec pactl set-sink-volume @DEFAULT_SINK@ -1%; exec pkill -SIGRTMIN+1 yagostatus
+bindsym XF86AudioRaiseVolume exec pactl set-sink-volume @DEFAULT_SINK@ +1%; exec pkill -SIGRTMIN+1 yagostatus
+bindsym XF86AudioMute exec pactl set-sink-mute @DEFAULT_SINK@ toggle; exec pkill -SIGRTMIN+1 yagostatus
 ```
 
 ```yml
   - widget: exec
     command: |
-        res=($(amixer get Master|grep -Eo '\[[0-9]+%\] \[(on|off)\]'|head -n1|tr -d "[]"))
         color="#ffffff"
-        if [ "${res[1]}" = "off" ]; then
-            color="#ff0000"
+        if [ $(pacmd list-sinks |sed  '1,/* index/d'|grep -E '^\smuted:'|head -n1|awk '{print $2}') = "yes" ]; then
+          color="#ff0000"
         fi
-        echo -e '[{"full_text": "<span font_family=\"Symbola\">\xF0\x9F\x94\x8A</span> '${res[0]}'", "color": "'$color'"}]'
+        volume=$(pacmd list-sinks |sed  '1,/* index/d'|grep -E '^\svolume:'|head -n1|awk '{print $5}')
+        echo -e '[{"full_text":"♪ '${volume}'","color":"'$color'"}]'
 
     interval: 0
     signal: 1
     events_update: true
     events:
         - button: 1
-          command: amixer -q set Master toggle
+          command: pactl set-sink-mute @DEFAULT_SINK@ toggle
 
         - button: 4
-          command: amixer -q set Master 3%+
+          command: pactl set-sink-volume @DEFAULT_SINK@ +1%
 
         - button: 5
-          command: amixer -q set Master 3%-
+          command: pactl set-sink-volume @DEFAULT_SINK@ -1%
 
     templates: >
         [{
@@ -343,6 +351,8 @@ Requires [jq](https://stedolan.github.com/jq/) for json parsing.
             "separator_block_width": 21
         }]
 ```
+
+You can use the [weather snippet](https://github.com/burik666/ygs-snippets/tree/master/weather) instead.
 
 ### Conky
 

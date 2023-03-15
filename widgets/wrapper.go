@@ -7,8 +7,7 @@ import (
 	"io"
 	"syscall"
 
-	"github.com/burik666/yagostatus/internal/pkg/executor"
-	"github.com/burik666/yagostatus/internal/pkg/logger"
+	"github.com/burik666/yagostatus/pkg/executor"
 	"github.com/burik666/yagostatus/ygs"
 )
 
@@ -16,26 +15,36 @@ import (
 type WrapperWidgetParams struct {
 	Command string
 	WorkDir string
+	Env     []string
 }
 
 // WrapperWidget implements the wrapper of other status commands.
 type WrapperWidget struct {
+	ygs.BlankWidget
+
 	params WrapperWidgetParams
 
-	logger logger.Logger
+	logger ygs.Logger
 
 	exc   *executor.Executor
 	stdin io.WriteCloser
 
 	eventBracketWritten bool
+	shutdown            bool
 }
 
 func init() {
-	ygs.RegisterWidget("wrapper", NewWrapperWidget, WrapperWidgetParams{})
+	if err := ygs.RegisterWidget(ygs.WidgetSpec{
+		Name:          "wrapper",
+		NewFunc:       NewWrapperWidget,
+		DefaultParams: WrapperWidgetParams{},
+	}); err != nil {
+		panic(err)
+	}
 }
 
 // NewWrapperWidget returns a new WrapperWidget.
-func NewWrapperWidget(params interface{}, wlogger logger.Logger) (ygs.Widget, error) {
+func NewWrapperWidget(params interface{}, wlogger ygs.Logger) (ygs.Widget, error) {
 	w := &WrapperWidget{
 		params: params.(WrapperWidgetParams),
 		logger: wlogger,
@@ -51,6 +60,8 @@ func NewWrapperWidget(params interface{}, wlogger logger.Logger) (ygs.Widget, er
 	}
 
 	exc.SetWD(w.params.WorkDir)
+
+	exc.AddEnv(w.params.Env...)
 
 	w.exc = exc
 
@@ -70,10 +81,12 @@ func (w *WrapperWidget) Run(c chan<- []ygs.I3BarBlock) error {
 
 	err = w.exc.Run(w.logger, c, executor.OutputFormatJSON)
 	if err == nil {
-		err = errors.New("process exited unexpectedly")
+		if w.shutdown {
+			return nil
+		}
 
 		if state := w.exc.ProcessState(); state != nil {
-			return fmt.Errorf("%w: %s", err, state.String())
+			return fmt.Errorf("process exited unexpectedly: %s", state.String())
 		}
 	}
 
@@ -133,13 +146,12 @@ func (w *WrapperWidget) Continue() error {
 
 // Shutdown shutdowns the widget.
 func (w *WrapperWidget) Shutdown() error {
+	w.shutdown = true
+
 	if w.exc != nil {
-		err := w.exc.Signal(syscall.SIGTERM)
-		if err != nil {
+		if err := w.exc.Shutdown(); err != nil {
 			return err
 		}
-
-		return w.exc.Wait()
 	}
 
 	return nil

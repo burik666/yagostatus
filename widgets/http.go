@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/burik666/yagostatus/internal/pkg/logger"
 	"github.com/burik666/yagostatus/ygs"
 
 	"golang.org/x/net/websocket"
@@ -26,11 +25,11 @@ type HTTPWidgetParams struct {
 
 // HTTPWidget implements the http server widget.
 type HTTPWidget struct {
-	BlankWidget
+	ygs.BlankWidget
 
 	params HTTPWidgetParams
 
-	logger logger.Logger
+	logger ygs.Logger
 
 	c        chan<- []ygs.I3BarBlock
 	instance *httpInstance
@@ -49,15 +48,21 @@ type httpInstance struct {
 var instances map[string]*httpInstance
 
 func init() {
-	ygs.RegisterWidget("http", NewHTTPWidget, HTTPWidgetParams{
-		Network: "tcp",
-	})
+	if err := ygs.RegisterWidget(ygs.WidgetSpec{
+		Name:    "http",
+		NewFunc: NewHTTPWidget,
+		DefaultParams: HTTPWidgetParams{
+			Network: "tcp",
+		},
+	}); err != nil {
+		panic(err)
+	}
 
 	instances = make(map[string]*httpInstance, 1)
 }
 
 // NewHTTPWidget returns a new HTTPWidget.
-func NewHTTPWidget(params interface{}, wlogger logger.Logger) (ygs.Widget, error) {
+func NewHTTPWidget(params interface{}, wlogger ygs.Logger) (ygs.Widget, error) {
 	w := &HTTPWidget{
 		params: params.(HTTPWidgetParams),
 		logger: wlogger,
@@ -77,6 +82,7 @@ func NewHTTPWidget(params interface{}, wlogger logger.Logger) (ygs.Widget, error
 
 	instanceKey := w.params.Listen
 	instance, ok := instances[instanceKey]
+
 	if ok {
 		if _, ok := instance.paths[w.params.Path]; ok {
 			return nil, fmt.Errorf("path '%s' already in use", w.params.Path)
@@ -100,6 +106,7 @@ func NewHTTPWidget(params interface{}, wlogger logger.Logger) (ygs.Widget, error
 	instance.paths[instanceKey] = struct{}{}
 
 	w.clients = make(map[*websocket.Conn]chan interface{})
+
 	return w, nil
 }
 
@@ -132,11 +139,15 @@ func (w *HTTPWidget) Event(event ygs.I3BarClickEvent, blocks []ygs.I3BarBlock) e
 }
 
 func (w *HTTPWidget) Shutdown() error {
-	if w.instance == nil {
+	if w.instance == nil || w.instance.l == nil {
 		return nil
 	}
 
-	return w.instance.server.Shutdown(context.Background())
+	if err := w.instance.server.Shutdown(context.Background()); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (w *HTTPWidget) httpHandler(response http.ResponseWriter, request *http.Request) {
@@ -205,11 +216,12 @@ func (w *HTTPWidget) wsHandler(ws *websocket.Conn) {
 
 	for {
 		if err := websocket.JSON.Receive(ws, &blocks); err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				break
 			}
 
 			w.logger.Errorf("invalid message: %s", err)
+
 			break
 		}
 

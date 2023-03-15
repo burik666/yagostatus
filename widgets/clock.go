@@ -3,7 +3,6 @@ package widgets
 import (
 	"time"
 
-	"github.com/burik666/yagostatus/internal/pkg/logger"
 	"github.com/burik666/yagostatus/ygs"
 )
 
@@ -15,20 +14,26 @@ type ClockWidgetParams struct {
 
 // ClockWidget implements a clock.
 type ClockWidget struct {
-	BlankWidget
+	ygs.BlankWidget
 
 	params ClockWidgetParams
 }
 
 func init() {
-	ygs.RegisterWidget("clock", NewClockWidget, ClockWidgetParams{
-		Interval: 1,
-		Format:   "Jan _2 Mon 15:04:05",
-	})
+	if err := ygs.RegisterWidget(ygs.WidgetSpec{
+		Name:    "clock",
+		NewFunc: NewClockWidget,
+		DefaultParams: ClockWidgetParams{
+			Interval: 1,
+			Format:   "Jan _2 Mon 15:04:05",
+		},
+	}); err != nil {
+		panic(err)
+	}
 }
 
 // NewClockWidget returns a new ClockWidget.
-func NewClockWidget(params interface{}, wlogger logger.Logger) (ygs.Widget, error) {
+func NewClockWidget(params interface{}, wlogger ygs.Logger) (ygs.Widget, error) {
 	w := &ClockWidget{
 		params: params.(ClockWidgetParams),
 	}

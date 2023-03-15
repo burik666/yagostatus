@@ -1,19 +1,21 @@
-package ygs
+package config
 
 import (
 	"errors"
+	"fmt"
+
+	"github.com/burik666/yagostatus/ygs"
 )
 
 // WidgetConfig represents a widget configuration.
 type WidgetConfig struct {
 	Name       string              `yaml:"widget"`
 	Workspaces []string            `yaml:"workspaces"`
-	Templates  []I3BarBlock        `yaml:"-"`
+	Templates  []ygs.I3BarBlock    `yaml:"-"`
 	Events     []WidgetEventConfig `yaml:"events"`
-	WorkDir    string              `yaml:"-"`
+	WorkDir    string              `yaml:"workdir"`
 	Index      int                 `yaml:"-"`
 	File       string              `yaml:"-"`
-	Variables  map[string]string   `yaml:"variables"`
 
 	Params map[string]interface{} `yaml:",inline"`
 
@@ -28,7 +30,7 @@ func (c WidgetConfig) Validate() error {
 
 	for ei := range c.Events {
 		if err := c.Events[ei].Validate(); err != nil {
-			return err
+			return fmt.Errorf("events#%d: %w", ei+1, err)
 		}
 	}
 

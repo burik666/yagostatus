@@ -9,9 +9,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/burik666/yagostatus/internal/pkg/executor"
-	"github.com/burik666/yagostatus/internal/pkg/logger"
-	"github.com/burik666/yagostatus/internal/pkg/signals"
+	"github.com/burik666/yagostatus/pkg/executor"
+	"github.com/burik666/yagostatus/pkg/signals"
 	"github.com/burik666/yagostatus/ygs"
 )
 
@@ -25,15 +24,16 @@ type ExecWidgetParams struct {
 	Signal       *int
 	OutputFormat executor.OutputFormat `yaml:"output_format"`
 	WorkDir      string
+	Env          []string
 }
 
 // ExecWidget implements the exec widget.
 type ExecWidget struct {
-	BlankWidget
+	ygs.BlankWidget
 
 	params ExecWidgetParams
 
-	logger logger.Logger
+	logger ygs.Logger
 
 	signal  os.Signal
 	c       chan<- []ygs.I3BarBlock
@@ -42,14 +42,22 @@ type ExecWidget struct {
 	env     []string
 
 	outputWG sync.WaitGroup
+	exc      *executor.Executor
+	shutdown bool
 }
 
 func init() {
-	ygs.RegisterWidget("exec", NewExecWidget, ExecWidgetParams{})
+	if err := ygs.RegisterWidget(ygs.WidgetSpec{
+		Name:          "exec",
+		NewFunc:       NewExecWidget,
+		DefaultParams: ExecWidgetParams{},
+	}); err != nil {
+		panic(err)
+	}
 }
 
 // NewExecWidget returns a new ExecWidget.
-func NewExecWidget(params interface{}, wlogger logger.Logger) (ygs.Widget, error) {
+func NewExecWidget(params interface{}, wlogger ygs.Logger) (ygs.Widget, error) {
 	w := &ExecWidget{
 		params: params.(ExecWidgetParams),
 		logger: wlogger,
@@ -87,15 +95,19 @@ func (w *ExecWidget) exec() error {
 		return err
 	}
 
+	w.exc = exc
+
 	exc.SetWD(w.params.WorkDir)
 
 	exc.AddEnv(w.env...)
+	exc.AddEnv(w.params.Env...)
 
 	c := make(chan []ygs.I3BarBlock)
 
 	defer close(c)
 
 	w.outputWG.Add(1)
+
 	go (func() {
 		defer w.outputWG.Done()
 
@@ -118,6 +130,10 @@ func (w *ExecWidget) exec() error {
 					w.upd <- struct{}{}
 					w.resetTicker()
 				})()
+			}
+
+			if w.shutdown {
+				return nil
 			}
 
 			return fmt.Errorf("process exited unexpectedly: %s", state.String())
@@ -168,8 +184,7 @@ func (w *ExecWidget) Run(c chan<- []ygs.I3BarBlock) error {
 	}
 
 	for range w.upd {
-		err := w.exec()
-		if err != nil {
+		if err := w.exec(); err != nil {
 			if !w.params.Silent {
 				w.outputWG.Wait()
 
@@ -205,10 +220,24 @@ func (w *ExecWidget) setEnv(blocks []ygs.I3BarBlock) {
 		if i > 0 {
 			suffix = fmt.Sprintf("_%d", i)
 		}
+
 		env = append(env, block.Env(suffix)...)
 	}
 
 	w.env = env
+}
+
+// Shutdown shutdowns the widget.
+func (w *ExecWidget) Shutdown() error {
+	w.shutdown = true
+
+	if w.exc != nil {
+		if err := w.exc.Shutdown(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (w *ExecWidget) resetTicker() {

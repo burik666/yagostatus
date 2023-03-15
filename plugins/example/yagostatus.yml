@@ -1,0 +1,9 @@
+plugins:
+  load:
+    - plugin: example.so
+      default_message: "hello world"
+widgets:
+  - widget: example
+
+  - widget: example
+    message: "hi"

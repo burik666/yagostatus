@@ -26,7 +26,7 @@ type I3BarBlock struct {
 	BorderRight         *uint16         `json:"border_right,omitempty"`
 	BackgroundColor     string          `json:"background,omitempty"`
 	Markup              string          `json:"markup,omitempty"`
-	MinWidth            string          `json:"min_width,omitempty"`
+	MinWidth            Vary            `json:"min_width,omitempty"`
 	Align               string          `json:"align,omitempty"`
 	Name                string          `json:"name,omitempty"`
 	Instance            string          `json:"instance,omitempty"`
@@ -45,6 +45,8 @@ type I3BarClickEvent struct {
 	Y         uint16   `json:"y"`
 	RelativeX uint16   `json:"relative_x"`
 	RelativeY uint16   `json:"relative_y"`
+	OutputX   uint16   `json:"output_x"`
+	OutputY   uint16   `json:"output_y"`
 	Width     uint16   `json:"width"`
 	Height    uint16   `json:"height"`
 	Modifiers []string `json:"modifiers"`
@@ -96,7 +98,7 @@ func (b *I3BarBlock) Apply(tpl I3BarBlock) {
 	jb, _ := json.Marshal(b)
 	*b = tpl
 
-	json.Unmarshal(jb, b)
+	_ = json.Unmarshal(jb, b)
 }
 
 func (b I3BarBlock) Env(suffix string) []string {
@@ -108,7 +110,7 @@ func (b I3BarBlock) Env(suffix string) []string {
 	ob, _ := json.Marshal(b)
 
 	var rawOutput map[string]Vary
-	json.Unmarshal(ob, &rawOutput)
+	_ = json.Unmarshal(ob, &rawOutput)
 
 	for k, v := range rawOutput {
 		env = append(env, fmt.Sprintf("I3_%s%s=%s", k, suffix, v.String()))

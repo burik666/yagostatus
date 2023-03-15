@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -12,18 +13,27 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/burik666/yagostatus/internal/logger"
 	"github.com/burik666/yagostatus/ygs"
 
 	"gopkg.in/yaml.v2"
 )
 
 func parse(data []byte, workdir string, source string) (*Config, error) {
-
 	config := Config{}
 	config.Signals.StopSignal = syscall.SIGUSR1
 	config.Signals.ContSignal = syscall.SIGCONT
 
-	if err := yaml.Unmarshal(data, &config); err != nil {
+	if config.Plugins.Path == "" {
+		wd, err := os.Getwd()
+		if err != nil {
+			return nil, err
+		}
+
+		config.Plugins.Path = wd
+	}
+
+	if err := yaml.UnmarshalStrict(data, &config); err != nil {
 		return nil, trimYamlErr(err, false)
 	}
 
@@ -33,6 +43,7 @@ func parse(data []byte, workdir string, source string) (*Config, error) {
 	}
 
 	dict := make(map[string]string, len(config.Variables))
+
 	for k, v := range config.Variables {
 		vb, err := json.Marshal(v)
 		if err != nil {
@@ -56,12 +67,12 @@ WIDGET:
 	for wi := 0; wi < len(config.Widgets); wi++ {
 		widget := &config.Widgets[wi]
 
-		params := make(map[string]interface{})
-		for k, v := range config.Widgets[wi].Params {
-			params[strings.ToLower(k)] = v
-		}
+		l := logger.WithPrefix(fmt.Sprintf("[%s#%d]", widget.File, widget.Index+1))
 
-		config.Widgets[wi].Params = params
+		params := config.Widgets[wi].Params
+		if params == nil {
+			params = make(map[string]interface{})
+		}
 
 		if widget.WorkDir == "" {
 			widget.WorkDir = workdir
@@ -69,7 +80,7 @@ WIDGET:
 
 		for i := range widget.Events {
 			if widget.Events[i].WorkDir == "" {
-				widget.Events[i].WorkDir = workdir
+				widget.Events[i].WorkDir = widget.WorkDir
 			}
 		}
 
@@ -88,14 +99,12 @@ WIDGET:
 
 				continue WIDGET
 			}
-
-			delete(params, "template")
 		}
 
 		if itpls, ok := params["templates"]; ok {
 			tpls, ok := itpls.(string)
 			if !ok {
-				setError(widget, fmt.Errorf("invalid templates"), false)
+				setError(widget, fmt.Errorf("invalid template"), false)
 
 				continue WIDGET
 			}
@@ -105,12 +114,12 @@ WIDGET:
 
 				continue WIDGET
 			}
-
-			delete(params, "templates")
 		}
 
 		ok, err := parseSnippet(&config, wi, params)
 		if err != nil {
+			l.Errorf("parse snippets: %s", err)
+
 			setError(widget, err, false)
 
 			continue WIDGET
@@ -118,6 +127,7 @@ WIDGET:
 
 		if ok {
 			wi--
+
 			continue WIDGET
 		}
 
@@ -147,7 +157,7 @@ func parseSnippet(config *Config, wi int, params map[string]interface{}) (bool, 
 
 		filename := widget.Name[1:]
 		if !filepath.IsAbs(filename) {
-			filename = wd + "/" + filename
+			filename = filepath.Join(wd, filename)
 		}
 
 		data, err := ioutil.ReadFile(filename)
@@ -156,8 +166,8 @@ func parseSnippet(config *Config, wi int, params map[string]interface{}) (bool, 
 		}
 
 		var snippetConfig SnippetConfig
-		if err := yaml.Unmarshal(data, &snippetConfig); err != nil {
-			return false, err
+		if err := yaml.UnmarshalStrict(data, &snippetConfig); err != nil {
+			return false, trimYamlErr(err, false)
 		}
 
 		for k, v := range snippetConfig.Variables {
@@ -167,7 +177,12 @@ func parseSnippet(config *Config, wi int, params map[string]interface{}) (bool, 
 		}
 
 		dict := make(map[string]string, len(params))
+
 		for k, v := range params {
+			if k == "template" || k == "templates" {
+				continue
+			}
+
 			if _, ok := snippetConfig.Variables[k]; !ok {
 				return false, fmt.Errorf("unknown variable '%s'", k)
 			}
@@ -190,20 +205,31 @@ func parseSnippet(config *Config, wi int, params map[string]interface{}) (bool, 
 		v := reflect.ValueOf(snippetConfig.Widgets)
 		replaceRecursive(&v, dict)
 
-		tpls, _ := json.Marshal(widget.Templates)
+		var tpls []byte
+		if len(widget.Templates) > 0 {
+			tpls, _ = json.Marshal(widget.Templates)
+		}
 
 		wd = filepath.Dir(filename)
+
 		for i := range snippetConfig.Widgets {
-			snippetConfig.Widgets[i].WorkDir = wd
+			if snippetConfig.Widgets[i].WorkDir == "" {
+				snippetConfig.Widgets[i].WorkDir = wd
+			}
+
 			snippetConfig.Widgets[i].File = filename
 			snippetConfig.Widgets[i].Index = i
+			//nolint:gocritic
 			snippetConfig.Widgets[i].IncludeStack = append(widget.IncludeStack, widget.Name)
-			json.Unmarshal(tpls, &snippetConfig.Widgets[i].Templates)
+			if tpls != nil {
+				snippetConfig.Widgets[i].Params["templates"] = string(tpls)
+				_ = json.Unmarshal(tpls, &snippetConfig.Widgets[i].Templates)
+			}
 
 			snipEvents := snippetConfig.Widgets[i].Events
-			for i := range snipEvents {
-				if snipEvents[i].WorkDir == "" {
-					snipEvents[i].WorkDir = wd
+			for ei := range snipEvents {
+				if snipEvents[ei].WorkDir == "" {
+					snipEvents[ei].WorkDir = snippetConfig.Widgets[i].WorkDir
 				}
 			}
 
@@ -211,7 +237,7 @@ func parseSnippet(config *Config, wi int, params map[string]interface{}) (bool, 
 				if e.Override {
 					sort.Strings(e.Modifiers)
 
-					ne := make([]ygs.WidgetEventConfig, 0, len(snipEvents))
+					ne := make([]WidgetEventConfig, 0, len(snipEvents))
 
 					for _, se := range snipEvents {
 						sort.Strings(se.Modifiers)
@@ -220,12 +246,12 @@ func parseSnippet(config *Config, wi int, params map[string]interface{}) (bool, 
 							e.Name == se.Name &&
 							e.Instance == se.Instance &&
 							reflect.DeepEqual(e.Modifiers, se.Modifiers) {
-
 							continue
 						}
 
 						ne = append(ne, se)
 					}
+					//nolint:gocritic
 					snipEvents = append(ne, e)
 				} else {
 					snipEvents = append(snipEvents, e)
@@ -240,16 +266,18 @@ func parseSnippet(config *Config, wi int, params map[string]interface{}) (bool, 
 
 		return true, nil
 	}
+
 	return false, nil
 }
 
-func setError(widget *ygs.WidgetConfig, err error, trimLineN bool) {
-	*widget = ygs.ErrorWidget(trimYamlErr(err, trimLineN).Error())
+func setError(widget *WidgetConfig, err error, trimLineN bool) {
+	*widget = ErrorWidget(trimYamlErr(err, trimLineN).Error())
 }
 
 func trimYamlErr(err error, trimLineN bool) error {
 	msg := strings.TrimPrefix(err.Error(), "yaml: ")
 	msg = strings.TrimPrefix(msg, "unmarshal errors:\n  ")
+
 	if trimLineN {
 		msg = strings.TrimPrefix(msg, "line ")
 		msg = strings.TrimLeft(msg, "1234567890: ")
@@ -269,6 +297,7 @@ func replaceRecursive(v *reflect.Value, dict map[string]string) {
 		for i := 0; i < vv.Len(); i++ {
 			vi := vv.Index(i)
 			replaceRecursive(&vi, dict)
+			vv.Index(i).Set(vi)
 		}
 	case reflect.Map:
 		for _, i := range vv.MapKeys() {
@@ -292,6 +321,7 @@ func replaceRecursive(v *reflect.Value, dict map[string]string) {
 			vi := reflect.New(reflect.ValueOf(n).Type()).Elem()
 			vi.SetInt(n)
 			*v = vi
+
 			return
 		}
 
