@@ -22,9 +22,9 @@ Yet Another i3status replacement written in Go.
 
 ## Installation
 
-    go get github.com/burik666/yagostatus
-    mkdir ~/.config/yagostatus
-    cp $GOPATH/src/github.com/burik666/yagostatus/yagostatus.yml ~/.config/yagostatus/yagostatus.yml
+    go install github.com/burik666/yagostatus@latest
+    mkdir -p ~/.config/yagostatus
+    yagostatus -dump > ~/.config/yagostatus/yagostatus.yml
 
 Replace `status_command` to `~/go/bin/yagostatus --config ~/.config/yagostatus/yagostatus.yml` in your i3 config file.
 
