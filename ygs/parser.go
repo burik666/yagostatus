@@ -105,16 +105,17 @@ func convertFieldValue(f reflect.Value, k string, v Vary, strict bool) error {
 
 	switch reflect.Indirect(val).Kind() {
 	case reflect.String:
-		s, err := strconv.Unquote(sv)
+		s := sv
+
+		err := json.Unmarshal([]byte(s), &s)
 		if strict && err != nil {
 			return fmt.Errorf("invalid value for %s (string): %s", k, sv)
-		} else if err != nil {
-			s = sv
 		}
 
 		reflect.Indirect(val).SetString(s)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		s := sv
+
 		if !strict {
 			s = strings.Trim(sv, "\"")
 		}
@@ -126,6 +127,7 @@ func convertFieldValue(f reflect.Value, k string, v Vary, strict bool) error {
 		}
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
 		s := sv
+
 		if !strict {
 			s = strings.Trim(sv, "\"")
 		}
