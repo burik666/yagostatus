@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  go:
+    name: Go
+    uses: ./.github/workflows/go.yaml
+    secrets: inherit
+
+  changelog:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    name: Changelog
+    needs: [ "go", "build" ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create --generate-notes --verify-tag "${GITHUB_REF#refs/*/}"
